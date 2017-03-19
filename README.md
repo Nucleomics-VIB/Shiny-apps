@@ -11,7 +11,7 @@ Please refer to the accompanying **[wiki](https://github.com/Nucleomics-VIB/shin
 
 Those additional tools belong on a Shiny server and will execute R code in a interactive manner (please refder to https://shiny.rstudio.com/ for info about Shiny).
 
-### **Bioanalyzer.shinyapp** 
+### **RBioanalyzer.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
 
 The **[RBioanalyzer.shinyapp](RBioanalyzer)** app loads 2 to 3 Bioanalyzer exported csv fiels adn creates an overlay plot. A live version was posted to https://nucleomics-core.shinyapps.io/Bioanalyzer/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RBioanalyzer/Data/sample.zip).
