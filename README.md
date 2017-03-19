@@ -1,5 +1,5 @@
 [(Nucleomics-VIB)](https://github.com/Nucleomics-VIB)
-![bionano-tools](pictures/shiny.png) - Shiny-Apps
+![shiny-apps](pictures/shiny.png) - Shiny-Apps
 ==========
 
 *All tools presented below have only been tested by me and may contain bugs, please let me know if you find some. Each tool relies on dependencies normally listed at the top of the code (cpan for perl and cran for R will help you add them)*
