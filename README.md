@@ -14,7 +14,7 @@ Those additional tools belong on a Shiny server and will execute R code in a int
 ### **Bioanalyzer.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
 
-The **[Bioanalyzer.shinyapp](shiny-apps/Bioanalyzer.shinyapp)** app loads 2 to 3 Bioanalyzer exported csv fiels adn creates an overlay plot. A live version was posted to https://nucleomics-core.shinyapps.io/bioanalyzer/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/shiny-apps/raw/master/shiny-apps/Bioanalyzer.shinyapp/Data/sample.zip).
+The **[RBioanalyzer.shinyapp](shiny-apps/Bioanalyzer.shinyapp)** app loads 2 to 3 Bioanalyzer exported csv fiels adn creates an overlay plot. A live version was posted to https://nucleomics-core.shinyapps.io/Bioanalyzer/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/shiny-apps/raw/master/shiny-apps/RBioanalyzer.shinyapp/Data/sample.zip).
 
 
 *[[back-to-top](#top)]*  
