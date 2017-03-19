@@ -1,0 +1,10 @@
+name: RBioanalyzer
+title: RBioanalyzer
+account: nucleomics-core
+server: shinyapps.io
+appId: 165055
+bundleId: 753413
+url: https://nucleomics-core.shinyapps.io/RBioanalyzer/
+when: 1489944027.8615
+asMultiple: FALSE
+asStatic: FALSE
