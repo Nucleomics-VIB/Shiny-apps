@@ -1,0 +1,10 @@
+name: RFilterRNASeq
+title: RFilterRNASeq
+account: nucleomics-core
+server: shinyapps.io
+appId: 189380
+bundleId: 868269
+url: https://nucleomics-core.shinyapps.io/RFilterRNASeq/
+when: 1497531398.43457
+asMultiple: FALSE
+asStatic: FALSE
