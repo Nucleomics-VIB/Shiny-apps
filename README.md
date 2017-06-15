@@ -19,6 +19,8 @@ The **[RBioanalyzer.shinyapp](RBioanalyzer)** app loads 2 to 3 Bioanalyzer expor
 ### **RFilterRNASeq.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
 
+![RFilterRNASeq](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RFilterRNASeq/pictures/RFilterRNASeq.png)
+
 The **[RFilterRNASeq.shinyapp](RFilterRNASeq)** app loads a StatisticalResults.xlsx file obtained from the Core, filters each contrast based on user input, and creates a Venn plot and a count table. A live version was posted to https://nucleomics-core.shinyapps.io/RFilterRNASeq/. A sample excel file with 2000 gene rows is present in the 'Data' subfolder for your convenience [(StatisticalResults.xlsx)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RFilterRNASeq/Data/StatisticalResults.xlsx).
 
 
