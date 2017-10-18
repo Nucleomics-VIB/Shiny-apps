@@ -1,11 +1,17 @@
 # fpkm2heatmap.shinyapp
-# A R/shiny tool to create a simple heatmap 
-# from a list of genes (signature) 
+# A R/shiny tool to create a simple heatmap
+# from a list of genes (signature)
 # and a Nucleomics Core MS-Excel RNASeq count file
 
 library("shiny")
+library("shinyBS")
+library("readr")
 library("openxlsx")
-library("VennDiagram")
+library("DT")
+library("pheatmap")
+library("RColorBrewer")
+library("grid")
+library("ggplot2")
 library("grDevices")
 
 # you may uncomment the next line to allow large input files
@@ -16,17 +22,11 @@ if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2
 
 script.version="1.0"
 
-# defaults variables and controllers
-def.min.lfc <- 1
-def.max.pv <- 0.05
-chr.col <- NULL
-all.contrasts <- NULL
-
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
   # Application header
-  headerPanel("Extract a RNASeq signature and produce a heamap plot"),
+  headerPanel("Create a heamap plot for selected genes (RNASeq fpkm data)"),
 
   # Application title
   titlePanel(
@@ -40,28 +40,42 @@ ui <- fluidPage(
     # show file import and molecule filters
     sidebarPanel(
       tags$h4(paste("code version: ", script.version, sep="")),
-      downloadButton("downloadData", label = "Download test data"),
+      tipify(downloadButton("downloadData", label = "Download test data"),
+             "the Data is a MS-Excel file provided by the Nucleomics Core, with a fpkm worksheet reporting gene expression counts as second worksheet, you may produce a compatible file based on the test data provided here."),
+      tipify(downloadButton("downloadSignature", label = "Download test signature"),
+             "the signature is a two-lines text files with a first line starting by # followed by a space and a signature title (no spaces!), and a comma-separated list of Gene identifiers on line #2. These selected genes will be used to make a heatmap for all available samples."),
       tags$br(),
       tags$a(href="license.pdf", target="_blank", "usage licence"),
       tags$hr(),
       fileInput('file1', 'Choose RNASeq XLSX File', accept='.xlsx'),
       fileInput('file2', 'Choose text signature File', accept='.txt'),
-      tags$h4("Edit settings & click ", tags$em("Filter")),
-      textInput('outfile.name', "name for output File:", value = outfile,
-      textInput('plot.title', "Plot Title:", value = title,
-      textInput('image.format', "Output format (PNG or PDF):", value = outformat),
-      actionButton(inputId='goButton', "Filter", style='padding:4px; font-weight: bold; font-size:150%')
+      tags$h4("Edit settings & click ", tags$em("Plot")),
+      textInput('outfile', "name for output File:", value="my_heatmap"),
+      textInput('title', "Plot Title:", value="Custom HeatMap"),
+      checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=TRUE),
+      checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
+      checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
+      checkboxInput("show.legend", "Show legend:", value = TRUE),
+      selectInput("drows", "Distance for genes:", c("NULL", "euclidean", "maximum", "manhattan"), selected="euclidean"),
+      selectInput("dcols", "Distance for samples:", c("NULL", "euclidean", "maximum", "manhattan"), selected="euclidean"),
+      selectInput("clustmet", "Clustering method:", c("average", "ward.D", "complete"), selected="average"),
+      selectInput("color", "Color:", c("Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges",
+                                       "OrRd", "PuBu", "PuBuGn", "PuRd", "Purples", "RdPu", "Reds",
+                                       "YlGn", "YlGnBu", "YlOrBr", "YlOrRd")),
+      selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
+      actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
+      downloadButton('downloadTable', 'Download table'),
+      downloadButton('downloadPlot', 'Download Plot')
     ),
 
     # Show a plot of the generated distribution
     mainPanel(
-      plotOutput('plot1', width = "100%"),
-      textOutput('full.data'),
-      textOutput('min.lfc'),
-      textOutput('max.pv'),
-      textOutput('filt.data'),
+      plotOutput('heatmap', width = "100%"),
       br(),
-      tableOutput('filt.cnt')
+      textOutput('full.data.cnt'),
+      textOutput('filt.data.cnt'),
+      br(),
+      DT::dataTableOutput("filt.data.table")
     )
   )
 )
@@ -71,106 +85,180 @@ server <- function(input, output) {
 
   output$downloadData <- downloadHandler(
     filename <- function() { paste("expXXXX-RNAseqCounts", "xlsx", sep=".") },
-    content <- function(file) { file.copy("Data/StatisticalResults.xlsx", file) },
-    contentType = "application/zip"
+    content <- function(file) { file.copy("Data/expXXXX-RNAseqCounts.xlsx", file) }
   )
-  
-  output$downloadData <- downloadHandler(
+
+  output$downloadSignature <- downloadHandler(
     filename <- function() { paste("test.signature", "txt", sep=".") },
-    content <- function(file) { file.copy("Data/test.signature.txt", file) },
-    contentType = "application/zip"
+    content <- function(file) { file.copy("Data/test.signature.txt", file) }
   )
 
-  output$min.lfc <- renderText({
-    paste("min log-FC (abs-val): ", input$min.lfc)
-  })
-
-  output$max.pv <- renderText({
-    paste("max corrected-Pvalue: ", input$max.pv)
-  })
-
-  load.data <- reactive({
+  fpkm.data <- reactive({
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
 
     # load data from excel file
-    dat <- read.xlsx(inFile$datapath, sheet=1)
-    # count contasts
-    chr.col <- which(colnames(dat)==as.vector("Chromosome"))
-    # keep only filtering columns
-    data <- dat[,c(2, 1, sort(c(seq(3, chr.col-1, 5),seq(5, chr.col-1, 5))))]
-    # return data as 'load.data()'
-    data
+    dat <- read.xlsx(inFile$datapath, sheet=2)
+
+    # keep only data columns (remove last columns including "Chromosome")
+    chromosome.col <- which(colnames(dat)==as.vector("Chromosome"))
+    fpkm.data <- dat[,c(2,1,3:(chromosome.col-1))]
+
+    # remove some columns
+    row.names(fpkm.data) <- paste(fpkm.data[,1], fpkm.data[,2], sep=":")
+    fpkm.data <- fpkm.data[,-1]
+
+    # kick useless part of names for samples
+    colnames(fpkm.data) <- sub("@.*", "", colnames(fpkm.data))
+
+    # return data as 'fpkm.data()'
+    fpkm.data
   })
 
-  output$full.data <- reactive({
-    if (is.null(load.data())) return(NULL)
-    paste("gene rows in the Full data: ", nrow(load.data()))
+  output$full.data.cnt <- reactive({
+    if (is.null(fpkm.data())) return(NULL)
+    paste("Rows in the Full data: ", nrow(fpkm.data()))
   })
 
-  filter.data <- eventReactive(input$goButton, {
-    if (is.null(load.data())) return(NULL)
-    min.lfc <- input$min.lfc
-    max.fdr <- input$max.pv
-    # store filtering results for each contrast
-    num.contrasts <- (ncol(load.data()) - 2) / 2
-    # indices for LR and FDR columns
-    LR <- seq(1, 2 * num.contrasts, 2)
-    FDR <- seq(2, 2 * num.contrasts, 2)
-    # extract contrasts names
-    names <- gsub(".:.logFC", "", colnames(load.data())[LR+2])
-    # create list to store filtering results
-    filtered.list <- vector("list", num.contrasts)
-    # filter each contrast using cutoffs
-    for (i in 1:num.contrasts){
-      a <- LR[[i]]
-      b <- FDR[[i]]
-      # take one contrast and make small data.frame
-      ct <- load.data()[,c(1, 2, a+2, b+2)]
-      colnames(ct) <- c("Gene.Name", "Gene.ID", "LR", "FDR")
+  sig.name <- reactive({
+    inFile <- input$file2
+    if (is.null(inFile)) return(NULL)
 
-      filt <- ct[(abs(ct$LR)>=min.lfc & ct$FDR<=max.fdr),]
-      filtered.list[[i]] <- as.vector(filt$Gene.ID)
+    # read signature name
+    sig.name <- readLines(inFile$datapath, n=1)
+
+    # check format or die
+    if( startsWith(sig.name, "# ") ) {
+      sig.name <- gsub("# ", "", sig.name)
+    } else {
+      stop("Signature first row should be '# signature_name' (only space between # and name)")
     }
-    # name contrasts in list
-    names(filtered.list) <- names
-    # return object
-    filtered.list
+    sig.name
   })
 
-  output$filt.data <- reactive({
-    if (is.null(filter.data())) return(NULL)
-    paste("gene rows in the filtered data: ", length(unique(do.call(c, filter.data()))))
+  sig.vect <- reactive({
+    inFile <- input$file2
+    if (is.null(inFile)) return(NULL)
+
+    # read signature ID list
+    sig.vect <- read.table(inFile$datapath, skip=1, sep=",", header=FALSE)
+    sig.vect <- as.vector(t(sig.vect))
+
+    if(length(sig.vect)==0) {
+      stop("Signature second row should be a comma-separated list of ENSEMBL-IDs")
+    }
+
+    sig.vect
+    })
+
+  filtered.data <- eventReactive(input$goButton, {
+    # do nothing in absence of data
+    if (is.null(fpkm.data())) return(NULL)
+    if (is.null(sig.vect())) return(NULL)
+
+    # select only signature rows and discard Gene.ID column to keep only FPKM in data.frame
+    fpkm.data <- as.data.frame(fpkm.data())
+    hm.data <- fpkm.data[fpkm.data$Gene.ID %in% sig.vect(), 2:length(fpkm.data)]
+
+    # return data
+    hm.data
+    })
+
+  output$filt.data.cnt <- reactive({
+    paste("Rows in the Signature data: ", nrow(filtered.data()))
   })
 
-  sum.data <- reactive({
-    if (is.null(filter.data())) return(NULL)
-    counts <- data.frame(do.call(cbind, lapply(filter.data(), length)),
-                            row.names = "filtered gene counts")
-    colnames(counts) <- names(filter.data())
-    counts
+  output$filt.data.table = DT::renderDataTable({
+    if (is.null(filtered.data())) return(NULL)
+
+    hm.data <- filtered.data()
+
+    if (input$log.trans==TRUE) {
+      hm.data <- round(log(hm.data+0.001, 2),3)
+    }
+
+    hm.data
+
   })
 
-  output$filt.cnt <- renderTable({sum.data()}, rownames=TRUE, colnames=TRUE, digits=2)
+  plotInput <- function(){
+    if (is.null(filtered.data())) return(NULL)
 
-  output$plot1 <- renderPlot({
-    if (is.null(filter.data())) return(NULL)
-    if (length(filter.data()) > 5) return(NULL)
-    # suppress log file creation
-    futile.logger::flog.threshold(futile.logger::ERROR, name = "VennDiagramLogger")
-    venn.plot <- venn.diagram(filter.data(),
-                              filename = NULL,
-                              names = names,
-                              scaled = TRUE,
-                              height = 800,
-                              width = 800,
-                              cex = 0.75,
-                              cat.cex = 0.9,
-                              margin=0.2,
-                              cat.dist=rep(0.25, length(filter.data())))
-    # plot
-    grid.draw(venn.plot)
+    # define metrics for clustering
+    if (input$drows=="NULL") {
+      cluster.rows=FALSE
+      drows=NULL
+    } else {
+      cluster.rows=TRUE
+      drows=input$drows
+    }
+
+    if (input$dcols=="NULL") {
+      cluster.cols=FALSE
+      dcols=NULL
+    } else {
+      cluster.cols=TRUE
+      dcols=input$dcols
+    }
+
+    if (input$clustmet=="NULL") {
+      clustmet=NULL
+    } else {
+      clustmet=input$clustmet
+    }
+
+    hm.data <- filtered.data()
+
+    if (input$log.trans==TRUE) {
+      hm.data <- round(log(hm.data+0.001, 2),3)
+    }
+
+    heatmap <- pheatmap(hm.data,
+                        color = (brewer.pal(9, input$color)),
+                        fontsize = 8,
+                        cellwidth = 12, cellheight = 12, scale = "none",
+                        treeheight_row = 100,
+                        kmeans_k = NA,
+                        show_rownames = input$show.gene.names,
+                        show_colnames = input$show.sample.names,
+                        main = input$title,
+                        clustering_method = clustmet,
+                        cluster_rows = cluster.rows,
+                        cluster_cols = cluster.cols,
+                        clustering_distance_rows = drows,
+                        clustering_distance_cols = dcols,
+                        legend = input$show.legend)
+    heatmap
+  }
+
+  output$heatmap <- renderPlot({
+    print(plotInput())
   })
+
+  output$downloadPlot <- downloadHandler(
+    filename =  function() {
+      paste(input$outfile, input$format, sep=".")
+    },
+    # content is a function with argument file. content writes the plot to the device
+    content = function(file) {
+      if(input$format == "png")
+        png(file) # open the png device
+      else
+        pdf(file, onefile=FALSE) # open the pdf device
+      # plot
+      plotInput()
+      dev.off()  # turn the device off
+    })
+
+  output$downloadTable <- downloadHandler(
+    filename = function() {
+      paste(input$outfile, ".xlsx", sep="")
+    },
+    content = function(file) {
+      write.xlsx(filtered.data(), file, row.names=TRUE, col.names=TRUE)
+    }
+  )
+
 }
 
 # Run the application
