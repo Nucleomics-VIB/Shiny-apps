@@ -6,6 +6,8 @@
 
 Please refer to the accompanying **[wiki](https://github.com/Nucleomics-VIB/shiny-apps/wiki)** for examples and workflows.
 
+Read the header of each App.R to find out which packages you need to install on your server to have the code do its job.
+
 ## Shiny-apps
 *[[back-to-top](#top)]*  
 
