@@ -6,10 +6,19 @@
 
 Please refer to the accompanying **[wiki](https://github.com/Nucleomics-VIB/shiny-apps/wiki)** for examples and workflows.
 
+Read the header of each App.R to find out which packages you need to install on your server to have the code do its job.
+
 ## Shiny-apps
 *[[back-to-top](#top)]*  
 
 Those additional tools belong on a Shiny server and will execute R code in a interactive manner (please refder to https://shiny.rstudio.com/ for info about Shiny).
+
+### **fpkm2heatmap.shinyapp** 
+*[[Shiny-apps](#shiny-apps)]*
+
+![fpkm2heatmap](pictures/fpkm2heatmap.png)
+
+The **[fpkm2heatmap.shinyapp](fpkm2heatmap)** app loads a FPKM Excel file provided by teh Nucleomics Core and a list of EnsEMBL gene IDs (signature) and produced a heatmap plot taht can be tuned to your needs. A live version was posted to https://nucleomics-core.shinyapps.io/fpkm2heatmap/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/fpkm2heatmap-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
 
 ### **RBioanalyzer.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
