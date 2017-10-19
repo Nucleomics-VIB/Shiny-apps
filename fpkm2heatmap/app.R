@@ -5,14 +5,11 @@
 
 library("shiny")
 library("shinyBS")
-library("readr")
 library("openxlsx")
 library("DT")
 library("pheatmap")
 library("RColorBrewer")
-library("grid")
-library("ggplot2")
-library("grDevices")
+#library("grid")
 
 # you may uncomment the next line to allow large input files
 # options(shiny.maxRequestSize=1000*1024^2)
@@ -20,7 +17,10 @@ library("grDevices")
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
-script.version="1.0"
+script.version <- "1.0"
+
+# maximum sugnature length
+maxlen <- 200
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -40,24 +40,25 @@ ui <- fluidPage(
     # show file import and molecule filters
     sidebarPanel(
       tags$h4(paste("code version: ", script.version, sep="")),
-      tipify(downloadButton("downloadData", label = "Download test data"),
-             "the Data is a MS-Excel file provided by the Nucleomics Core, with a fpkm worksheet reporting gene expression counts as second worksheet, you may produce a compatible file based on the test data provided here."),
-      tipify(downloadButton("downloadSignature", label = "Download test signature"),
-             "the signature is a two-lines text files with a first line starting by # followed by a space and a signature title (no spaces!), and a comma-separated list of Gene identifiers on line #2. These selected genes will be used to make a heatmap for all available samples."),
+      downloadButton("downloadData", label = "Download test data"),
+      downloadButton("downloadSignature", label = "Download test signature"),
       tags$br(),
       tags$a(href="license.pdf", target="_blank", "usage licence"),
       tags$hr(),
-      fileInput('file1', 'Choose RNASeq XLSX File', accept='.xlsx'),
-      fileInput('file2', 'Choose text signature File', accept='.txt'),
+      tipify(fileInput('file1', 'Choose RNASeq XLSX File', accept='.xlsx'),
+             "the Data is a MS-Excel file provided by the Nucleomics Core, with worksheet#2 reporting gene expression (FPKM), you may produce a compatible file based on the test data provided here."),
+      tipify(fileInput('file2', 'Choose text signature File', accept='.txt'),
+             "the signature is a one-column text files containing one EnsEMBL ID per line. It can for instance be made from the top-N DE genes in your data or from a list of genes members of a pathway or biological function. We limit here the length of a signature to 200 to prevent generating plots that cannot be printed on one page (the first 200 IDs are used if the list is larger)"),
       tags$h4("Edit settings & click ", tags$em("Plot")),
       textInput('outfile', "name for output File:", value="my_heatmap"),
       textInput('title', "Plot Title:", value="Custom HeatMap"),
+      sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=50),
       checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=TRUE),
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
-      selectInput("drows", "Distance for genes:", c("NULL", "euclidean", "maximum", "manhattan"), selected="euclidean"),
-      selectInput("dcols", "Distance for samples:", c("NULL", "euclidean", "maximum", "manhattan"), selected="euclidean"),
+      selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan"), selected="euclidean"),
+      selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan"), selected="euclidean"),
       selectInput("clustmet", "Clustering method:", c("average", "ward.D", "complete"), selected="average"),
       selectInput("color", "Color:", c("Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges",
                                        "OrRd", "PuBu", "PuBuGn", "PuRd", "Purples", "RdPu", "Reds",
@@ -78,7 +79,9 @@ ui <- fluidPage(
       DT::dataTableOutput("filt.data.table")
     )
   )
-)
+
+  # end UI block
+  )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -95,6 +98,7 @@ server <- function(input, output) {
 
   fpkm.data <- reactive({
     inFile <- input$file1
+
     if (is.null(inFile)) return(NULL)
 
     # load data from excel file
@@ -117,54 +121,45 @@ server <- function(input, output) {
 
   output$full.data.cnt <- reactive({
     if (is.null(fpkm.data())) return(NULL)
+
     paste("Rows in the Full data: ", nrow(fpkm.data()))
-  })
-
-  sig.name <- reactive({
-    inFile <- input$file2
-    if (is.null(inFile)) return(NULL)
-
-    # read signature name
-    sig.name <- readLines(inFile$datapath, n=1)
-
-    # check format or die
-    if( startsWith(sig.name, "# ") ) {
-      sig.name <- gsub("# ", "", sig.name)
-    } else {
-      stop("Signature first row should be '# signature_name' (only space between # and name)")
-    }
-    sig.name
   })
 
   sig.vect <- reactive({
     inFile <- input$file2
+
     if (is.null(inFile)) return(NULL)
 
-    # read signature ID list
-    sig.vect <- read.table(inFile$datapath, skip=1, sep=",", header=FALSE)
+        # read signature ID list
+    sig.vect <- read.table(inFile$datapath, sep=",", header=FALSE)
     sig.vect <- as.vector(t(sig.vect))
 
     if(length(sig.vect)==0) {
-      stop("Signature second row should be a comma-separated list of ENSEMBL-IDs")
+      stop("Signature should be a 1-column text file with EnsEMBL IDs")
     }
 
     sig.vect
     })
 
-  filtered.data <- eventReactive(input$goButton, {
+  filtered.data <- eventReactive({input$goButton | input$obs}, {
     # do nothing in absence of data
     if (is.null(fpkm.data())) return(NULL)
     if (is.null(sig.vect())) return(NULL)
 
     # select only signature rows and discard Gene.ID column to keep only FPKM in data.frame
+
+    # limit to maxlen
+    sig.vect <- sig.vect()[1:input$obs]
+
     fpkm.data <- as.data.frame(fpkm.data())
-    hm.data <- fpkm.data[fpkm.data$Gene.ID %in% sig.vect(), 2:length(fpkm.data)]
+    hm.data <- fpkm.data[fpkm.data$Gene.ID %in% sig.vect, 2:length(fpkm.data)]
 
     # return data
     hm.data
     })
 
   output$filt.data.cnt <- reactive({
+    if (is.null(filtered.data())) return(NULL)
     paste("Rows in the Signature data: ", nrow(filtered.data()))
   })
 
@@ -172,20 +167,17 @@ server <- function(input, output) {
     if (is.null(filtered.data())) return(NULL)
 
     hm.data <- filtered.data()
-
     if (input$log.trans==TRUE) {
       hm.data <- round(log(hm.data+0.001, 2),3)
     }
-
     hm.data
-
   })
 
-  plotInput <- function(){
+  hm.parameters <- function(){
     if (is.null(filtered.data())) return(NULL)
 
     # define metrics for clustering
-    if (input$drows=="NULL") {
+    if (input$drows=="none") {
       cluster.rows=FALSE
       drows=NULL
     } else {
@@ -193,7 +185,7 @@ server <- function(input, output) {
       drows=input$drows
     }
 
-    if (input$dcols=="NULL") {
+    if (input$dcols=="none") {
       cluster.cols=FALSE
       dcols=NULL
     } else {
@@ -201,11 +193,8 @@ server <- function(input, output) {
       dcols=input$dcols
     }
 
-    if (input$clustmet=="NULL") {
-      clustmet=NULL
-    } else {
-      clustmet=input$clustmet
-    }
+    # only active when at least one above is set
+    clustmet=input$clustmet
 
     hm.data <- filtered.data()
 
@@ -213,7 +202,7 @@ server <- function(input, output) {
       hm.data <- round(log(hm.data+0.001, 2),3)
     }
 
-    heatmap <- pheatmap(hm.data,
+    hm.parameters <- list(hm.data,
                         color = (brewer.pal(9, input$color)),
                         fontsize = 8,
                         cellwidth = 12, cellheight = 12, scale = "none",
@@ -228,38 +217,44 @@ server <- function(input, output) {
                         clustering_distance_rows = drows,
                         clustering_distance_cols = dcols,
                         legend = input$show.legend)
-    heatmap
+    hm.parameters
   }
 
   output$heatmap <- renderPlot({
-    print(plotInput())
+    if (is.null(hm.parameters())) return(NULL)
+    do.call("pheatmap", hm.parameters())
   })
 
   output$downloadPlot <- downloadHandler(
     filename =  function() {
       paste(input$outfile, input$format, sep=".")
     },
-    # content is a function with argument file. content writes the plot to the device
+    # content is a function with argument file. content writes the plot to file
     content = function(file) {
-      if(input$format == "png")
-        png(file) # open the png device
-      else
-        pdf(file, onefile=FALSE) # open the pdf device
-      # plot
-      plotInput()
-      dev.off()  # turn the device off
+      do.call("pheatmap", c(hm.parameters(), filename=file))
     })
 
   output$downloadTable <- downloadHandler(
     filename = function() {
-      paste(input$outfile, ".xlsx", sep="")
+      paste(input$outfile, "_data.xlsx", sep="")
     },
     content = function(file) {
-      write.xlsx(filtered.data(), file, row.names=TRUE, col.names=TRUE)
+      hs <- createStyle(textDecoration = "BOLD", fontColour = "#FFFFFF", fontSize=12,
+                        fontName="Calibri", fgFill = "#4F80BD")
+      write.xlsx(filtered.data(),
+                 file,
+                 sheetName = "Heatmap_Data",
+                 row.names = TRUE,
+                 col.names = TRUE,
+                 borders = "surrounding",
+                 colWidths = "auto",
+                 asTable = TRUE,
+                 headerStyle = hs)
     }
   )
 
-}
+  # end server block
+  }
 
 # Run the application
 shinyApp(ui = ui, server = server)
