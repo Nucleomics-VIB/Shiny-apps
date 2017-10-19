@@ -17,6 +17,7 @@ library("RColorBrewer")
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
+app.name <- "fpkm2heatmap.shinyapp"
 script.version <- "1.0"
 
 # maximum sugnature length
@@ -66,7 +67,8 @@ ui <- fluidPage(
       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
       actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
       downloadButton('downloadTable', 'Download table'),
-      downloadButton('downloadPlot', 'Download Plot')
+      downloadButton('downloadPlot', 'Download Plot'),
+      tipify(downloadButton('downloadMM', 'Download M&M'),"Download a text including the names and versions of all packages used in this webtool")
     ),
 
     # Show a plot of the generated distribution
@@ -250,6 +252,21 @@ server <- function(input, output) {
                  colWidths = "auto",
                  asTable = TRUE,
                  headerStyle = hs)
+    }
+  )
+
+  output$downloadMM <- downloadHandler(
+    filename = function() {
+      paste(input$outfile, "_session_info.txt", sep="")
+    },
+    content = function(file) {
+      sink(file, append=TRUE)
+      cat(paste("Thanks for using our tool", app.name, script.version, "\n", sep=" "))
+      cat("\nYou can contact The Nucleomics Core at nucleomics.vib.be for any question\n")
+      cat(paste("This data was generated on ", format(Sys.time(), "%a %b %d %H:%M:%S %Y"), "\n",sep=" "))
+      cat("\nThe R packages used in the tools are listed next:\n")
+      print(capture.output(sessionInfo()))
+      sink()
     }
   )
 
