@@ -17,7 +17,7 @@ library("RColorBrewer")
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
-app.name <- "fpkm2heatmap.shinyapp"
+app.name <- "fpkm2heatmap"
 script.version <- "1.0"
 
 # maximum sugnature length
@@ -27,7 +27,7 @@ maxlen <- 200
 ui <- fluidPage(
 
   # Application header
-  headerPanel("Create a heamap plot for selected genes (RNASeq fpkm data)"),
+  headerPanel(tags$h3("Create a heamap plot for selected genes (RNASeq fpkm data)")),
 
   # Application title
   titlePanel(
@@ -40,7 +40,7 @@ ui <- fluidPage(
   sidebarLayout(
     # show file import and molecule filters
     sidebarPanel(
-      tags$h4(paste("code version: ", script.version, sep="")),
+      tags$h5(paste(app.name, " version: ", script.version, sep="")),
       downloadButton("downloadData", label = "Download test data"),
       downloadButton("downloadSignature", label = "Download test signature"),
       tags$br(),
@@ -122,7 +122,7 @@ server <- function(input, output) {
   })
 
   output$full.data.cnt <- reactive({
-    if (is.null(fpkm.data())) return(NULL)
+    if (is.null(fpkm.data())) return("Waiting for data!")
 
     paste("Rows in the Full data: ", nrow(fpkm.data()))
   })
@@ -161,7 +161,7 @@ server <- function(input, output) {
     })
 
   output$filt.data.cnt <- reactive({
-    if (is.null(filtered.data())) return(NULL)
+    if (is.null(filtered.data())) return("Waiting for data!")
     paste("Rows in the Signature data: ", nrow(filtered.data()))
   })
 
