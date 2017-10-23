@@ -18,10 +18,10 @@ library("RColorBrewer")
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.0"
+script.version <- "1.1"
 
-# maximum sugnature length
-maxlen <- 200
+# maximum signature length
+maxlen <- 500
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -54,13 +54,14 @@ ui <- fluidPage(
       textInput('outfile', "name for output File:", value="my_heatmap"),
       textInput('title', "Plot Title:", value="Custom HeatMap"),
       sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=50),
-      checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=TRUE),
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
-      selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan"), selected="euclidean"),
-      selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan"), selected="euclidean"),
-      selectInput("clustmet", "Clustering method:", c("average", "ward.D", "complete"), selected="average"),
+      checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=TRUE),
+      tipify(selectInput("scale.data", "Scale data:", c("none", "row", "column"), selected="none"),"the values should be centered and scaled in either the row direction or the column direction, or none."),
+      tipify(selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the genes of the fpkm matrix"),
+      tipify(selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the samples of the fpkm matrix"),
+      tipify(selectInput("clustmet", "Clustering method:", c("average", "ward.D", "complete","ward.D2","single"), selected="average"),"the agglomeration method to be used"),
       selectInput("color", "Color:", c("Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges",
                                        "OrRd", "PuBu", "PuBuGn", "PuRd", "Purples", "RdPu", "Reds",
                                        "YlGn", "YlGnBu", "YlOrBr", "YlOrRd")),
@@ -207,12 +208,13 @@ server <- function(input, output) {
     hm.parameters <- list(hm.data,
                         color = (brewer.pal(9, input$color)),
                         fontsize = 8,
-                        cellwidth = 12, cellheight = 12, scale = "none",
+                        cellwidth = 12, cellheight = 12,
                         treeheight_row = 100,
                         kmeans_k = NA,
                         show_rownames = input$show.gene.names,
                         show_colnames = input$show.sample.names,
                         main = input$title,
+                        scale = input$scale.data,
                         clustering_method = clustmet,
                         cluster_rows = cluster.rows,
                         cluster_cols = cluster.cols,
