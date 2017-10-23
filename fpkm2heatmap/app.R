@@ -21,11 +21,15 @@ app.name <- "fpkm2heatmap"
 script.version <- "1.1"
 
 # maximum signature length
-maxlen <- 500
+maxlen <- 200
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+  HTML('<style type="text/css">
+    .row-fluid { width: 25%; }  
+       .well { background-color: #99CCFF; }
+       .shiny-html-output { font-size: 14px; line-height: 15px; }
+       </style>'),
   # Application header
   headerPanel(tags$h3("Create a heamap plot for selected genes (RNASeq fpkm data)")),
 
@@ -51,13 +55,13 @@ ui <- fluidPage(
       tipify(fileInput('file2', 'Choose text signature File', accept='.txt'),
              "the signature is a one-column text files containing one EnsEMBL ID per line. It can for instance be made from the top-N DE genes in your data or from a list of genes members of a pathway or biological function. We limit here the length of a signature to 200 to prevent generating plots that cannot be printed on one page (the first 200 IDs are used if the list is larger)"),
       tags$h4("Edit settings & click ", tags$em("Plot")),
-      textInput('outfile', "name for output File:", value="my_heatmap"),
+      actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
       textInput('title', "Plot Title:", value="Custom HeatMap"),
       sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=50),
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
-      checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=TRUE),
+      tipify(checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=FALSE),"unset when scale is ON"),
       tipify(selectInput("scale.data", "Scale data:", c("none", "row", "column"), selected="none"),"the values should be centered and scaled in either the row direction or the column direction, or none."),
       tipify(selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the genes of the fpkm matrix"),
       tipify(selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the samples of the fpkm matrix"),
@@ -66,7 +70,7 @@ ui <- fluidPage(
                                        "OrRd", "PuBu", "PuBuGn", "PuRd", "Purples", "RdPu", "Reds",
                                        "YlGn", "YlGnBu", "YlOrBr", "YlOrRd")),
       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
-      actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
+      textInput('outfile', "name for output File:", value="my_heatmap"),
       downloadButton('downloadTable', 'Download table'),
       downloadButton('downloadPlot', 'Download Plot'),
       tipify(downloadButton('downloadMM', 'Download M&M'),"Download a text including the names and versions of all packages used in this webtool")
