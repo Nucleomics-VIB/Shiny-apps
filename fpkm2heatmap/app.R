@@ -9,7 +9,6 @@ library("openxlsx")
 library("DT")
 library("pheatmap")
 library("RColorBrewer")
-#library("grid")
 
 # you may uncomment the next line to allow large input files
 # options(shiny.maxRequestSize=1000*1024^2)
@@ -18,7 +17,7 @@ library("RColorBrewer")
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.1"
+script.version <- "1.2"
 
 # maximum signature length
 maxlen <- 200
@@ -61,7 +60,6 @@ ui <- fluidPage(
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
-      tipify(checkboxInput("log.trans", "Log2 transform (after adding 0.001)", value=FALSE),"unset when scale is ON"),
       tipify(selectInput("scale.data", "Scale data:", c("none", "row", "column"), selected="none"),"the values should be centered and scaled in either the row direction or the column direction, or none."),
       tipify(selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the genes of the fpkm matrix"),
       tipify(selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the samples of the fpkm matrix"),
@@ -173,11 +171,7 @@ server <- function(input, output) {
   output$filt.data.table = DT::renderDataTable({
     if (is.null(filtered.data())) return(NULL)
 
-    hm.data <- filtered.data()
-    if (input$log.trans==TRUE) {
-      hm.data <- round(log(hm.data+0.001, 2),3)
-    }
-    hm.data
+    filtered.data()
   })
 
   hm.parameters <- function(){
@@ -204,10 +198,6 @@ server <- function(input, output) {
     clustmet=input$clustmet
 
     hm.data <- filtered.data()
-
-    if (input$log.trans==TRUE) {
-      hm.data <- round(log(hm.data+0.001, 2),3)
-    }
 
     hm.parameters <- list(hm.data,
                         color = (brewer.pal(9, input$color)),

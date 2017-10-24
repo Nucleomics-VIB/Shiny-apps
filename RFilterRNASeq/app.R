@@ -17,7 +17,7 @@ library("grDevices")
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
-script.version="1.0"
+script.version="1.1"
 
 # defaults variables and controllers
 def.min.lfc <- 1
@@ -27,7 +27,11 @@ all.contrasts <- NULL
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+  HTML('<style type="text/css">
+    .row-fluid { width: 25%; }  
+       .well { background-color: #99CCFF; }
+       .shiny-html-output { font-size: 14px; line-height: 15px; }
+       </style>'),
   # Application header
   headerPanel("Filter RNASeq data and create Venn plots"),
 
