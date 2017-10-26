@@ -25,7 +25,7 @@ maxlen <- 200
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   HTML('<style type="text/css">
-    .row-fluid { width: 25%; }  
+    .row-fluid { width: 25%; }
        .well { background-color: #99CCFF; }
        .shiny-html-output { font-size: 14px; line-height: 15px; }
        </style>'),
@@ -258,7 +258,7 @@ server <- function(input, output) {
     content = function(file) {
       sink(file, append=TRUE)
       cat(paste("Thanks for using our tool", app.name, script.version, "\n", sep=" "))
-      cat("\nYou can contact The Nucleomics Core at nucleomics.vib.be for any question\n")
+      cat("\nYou can contact The Nucleomics Core at nucleomics@vib.be for any question\n")
       cat(paste("This data was generated on ", format(Sys.time(), "%a %b %d %H:%M:%S %Y"), "\n",sep=" "))
       cat("\nThe R packages used in the tools are listed next:\n")
       print(capture.output(sessionInfo()))
