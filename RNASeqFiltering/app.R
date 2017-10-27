@@ -213,7 +213,7 @@ server <- function(input, output) {
       write.xlsx(filtered.data(),
                  file,
                  sheetName = "Filtered-Data",
-                 row.names = TRUE,
+                 row.names = FALSE,
                  col.names = TRUE,
                  borders = "surrounding",
                  colWidths = "auto",
