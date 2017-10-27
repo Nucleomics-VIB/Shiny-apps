@@ -17,7 +17,7 @@ library("RColorBrewer")
 if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.2"
+script.version <- "1.3"
 
 # maximum signature length
 maxlen <- 200
@@ -25,7 +25,7 @@ maxlen <- 200
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   HTML('<style type="text/css">
-    .row-fluid { width: 25%; }
+    .row-fluid { width: 20%; }
        .well { background-color: #99CCFF; }
        .shiny-html-output { font-size: 14px; line-height: 15px; }
        </style>'),
@@ -60,13 +60,13 @@ ui <- fluidPage(
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
-      tipify(selectInput("scale.data", "Scale data:", c("none", "row", "column"), selected="none"),"the values should be centered and scaled in either the row direction or the column direction, or none."),
+      tipify(selectInput("scale.data", "Scale data:", c("none", "row", "column"), selected="row"),"the values should be centered and scaled in either the row direction or the column direction, or none."),
       tipify(selectInput("drows", "Distance for genes:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the genes of the fpkm matrix"),
       tipify(selectInput("dcols", "Distance for samples:", c("none", "euclidean", "maximum", "manhattan", "camberra", "binary", "minkowski"), selected="euclidean"),"distance measure to compute the distances between the samples of the fpkm matrix"),
       tipify(selectInput("clustmet", "Clustering method:", c("average", "ward.D", "complete","ward.D2","single"), selected="average"),"the agglomeration method to be used"),
-      selectInput("color", "Color:", c("Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges",
+      selectInput("color", "Color:", c("BlueWhiteRed","Blues", "BuGn", "BuPu", "GnBu", "Greens", "Greys", "Oranges",
                                        "OrRd", "PuBu", "PuBuGn", "PuRd", "Purples", "RdPu", "Reds",
-                                       "YlGn", "YlGnBu", "YlOrBr", "YlOrRd")),
+                                       "YlGn", "YlGnBu", "YlOrBr", "YlOrRd"), selected="RedWhiteBlue"),
       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
       textInput('outfile', "name for output File:", value="my_heatmap"),
       downloadButton('downloadTable', 'Download table'),
@@ -199,8 +199,15 @@ server <- function(input, output) {
 
     hm.data <- filtered.data()
 
+    # about colors
+    if (input$color=="BlueWhiteRed") {
+      sel.pal <- colorRampPalette(c("blue","white","red"))(256)
+    } else {
+      sel.pal <- brewer.pal(9, input$color)
+    }
+
     hm.parameters <- list(hm.data,
-                        color = (brewer.pal(9, input$color)),
+                        color = sel.pal,
                         fontsize = 8,
                         cellwidth = 12, cellheight = 12,
                         treeheight_row = 100,
