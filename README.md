@@ -19,7 +19,7 @@ Those additional tools belong on a Shiny server and will execute R code in a int
 
 ![RNASeqFiltering](pictures/RNASeqFiltering.png)
 
-The **[fpkm2heatmap.shinyapp](RNASeqFiltering)** app loads a Statisticalresults.xlsx Excel file provided by the Nucleomics Core and a filter it on one or more contrasts with chosen FDR and logFC limits. Save the results to XLSX and text files for further use. A live version was posted to https://nucleomics-core.shinyapps.io/RNASeqFiltering/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RNASeqFiltering/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RNASeqFiltering/Data/RNASeqFiltering-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
+The **[RNASeqFiltering.shinyapp](RNASeqFiltering)** app loads a *StatisticalResults.xlsx* Excel file provided by the Nucleomics Core and filters it on one or more contrasts with chosen FDR and logFC limits. It then saves the results to XLSX and text files for further use. A live version was posted to https://nucleomics-core.shinyapps.io/RNASeqFiltering/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RNASeqFiltering/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RNASeqFiltering/Data/RNASeqFiltering-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
 
 ### **fpkm2heatmap.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
