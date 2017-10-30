@@ -97,7 +97,7 @@ server <- function(input, output) {
     if (is.null(inFile)) return("Waiting for data")
 
     # load data from excel file
-    dat <- read.xlsx(inFile$datapath, sheet=1)
+    dat <- read.xlsx(inFile$datapath, sheet=1, rowNames=FALSE)
 
     # count contasts
     chr.col <- which(colnames(dat)==as.vector("Chromosome"))
@@ -149,7 +149,7 @@ server <- function(input, output) {
 
   filtered.data <- eventReactive({input$goButton}, {
     # do nothing in absence of data
-    if (is.null(load.data())) return(NULL)
+    if ( is.null(load.data()) | length(input$contrasts)==0 ) return(NULL)
     filtered <- load.data()
 
     # filter values in input$contrasts selected LR and pval columns
