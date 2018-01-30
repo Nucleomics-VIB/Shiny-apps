@@ -55,6 +55,7 @@ ui <- fluidPage(
              "the signature is a one-column text files containing one EnsEMBL ID per line. It can for instance be made from the top-N DE genes in your data or from a list of genes members of a pathway or biological function. We limit here the length of a signature to 200 to prevent generating plots that cannot be printed on one page (the first 200 IDs are used if the list is larger)"),
       tags$h4("Edit settings & click ", tags$em("Plot")),
       actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
+      tipify(selectInput("genename", "Gene name:", c("Gene_symbol", "ENSembl_GID", "both"), selected="Gene_symbol"),"the gene names to show at the right of the rows."),
       textInput('title', "Plot Title:", value="Custom HeatMap"),
       sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=50),
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
