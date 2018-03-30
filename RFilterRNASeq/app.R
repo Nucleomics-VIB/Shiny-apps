@@ -28,7 +28,7 @@ all.contrasts <- NULL
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   HTML('<style type="text/css">
-    .row-fluid { width: 25%; }  
+    .row-fluid { width: 25%; }
        .well { background-color: #99CCFF; }
        .shiny-html-output { font-size: 14px; line-height: 15px; }
        </style>'),
@@ -147,7 +147,7 @@ server <- function(input, output) {
     counts <- data.frame(do.call(cbind, lapply(filter.data(), length)),
                             row.names = "filtered gene counts")
     colnames(counts) <- names(filter.data())
-    counts
+    t(counts)
   })
 
   output$filt.cnt <- renderTable({sum.data()}, rownames=TRUE, colnames=TRUE, digits=2)
