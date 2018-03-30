@@ -11,13 +11,13 @@ library("pheatmap")
 library("RColorBrewer")
 
 # you may uncomment the next line to allow large input files
-# options(shiny.maxRequestSize=1000*1024^2)
+options(shiny.maxRequestSize=1000*1024^2)
 # the following test checks if we are running on shinnyapps.io to limit file size dynamically
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
-if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
+#if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.3"
+script.version <- "1.3.1"
 
 # maximum signature length
 maxlen <- 200
@@ -82,7 +82,7 @@ ui <- fluidPage(
       textOutput('full.data.cnt'),
       textOutput('filt.data.cnt'),
       br(),
-      DT::dataTableOutput("filt.data.table")
+      div(DT::dataTableOutput("filt.data.table"), style = "font-size: 75%; width: 75%")
     )
   )
 
