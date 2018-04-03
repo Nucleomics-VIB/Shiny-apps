@@ -1,0 +1,146 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library("shiny")
+library("shinyBS")
+library("seqinr")
+library("ggplot2")
+library("DT")
+
+options(shiny.maxRequestSize=1000*1024^2)
+
+Fasta2length <-function(fastaFile) {
+  fa <- read.fasta(file = fastaFile)
+  fl <- getLength(fa)
+  # return kilobases
+  as.vector(fl)
+}
+
+# compute XNXX function
+Nvalue <- function(lim, x, na.rm = TRUE){
+  # handle NA values
+  if(isTRUE(na.rm)){
+    x <- x[!is.na(x)]
+  }
+  cutval <- 100/lim
+  # compute LXX and NXX
+  sorted <- sort(x, decreasing = TRUE)
+  SXX <- sum(x)/cutval
+  csum <- cumsum(sorted)
+  GTLXX <- as.vector(csum >= SXX)
+  LXX=min(which(GTLXX == TRUE))
+  NXX <- round(sorted[LXX], 1)
+  # eg: get NXX with lst['NXX']
+  NXX
+}
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+  sidebarLayout(
+    # show file import and molecule filters
+    sidebarPanel(
+       tipify(fileInput("upload", "Upload", accept = ".zip"), 
+              "A zip files containing all fasta assemblies to plot"),
+       br(),
+       actionButton("process", "Process uploaded data"),
+       hr(),
+       textInput('outfile', "name for output File:", value="assemblyNplot"),
+       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
+       downloadButton('downloadPlot', 'Download Plot')
+    ),
+  
+  mainPanel(
+    plotOutput('plot', width = "100%"),
+    div(DT::dataTableOutput('ntable'), style = "font-size: 75%; width: 75%")
+  )
+)
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+  fasta.files <- eventReactive({input$process}, {
+    unzip.files <- unzip(input$upload$datapath, list = FALSE)
+    # get rid of hidden and empty stuff
+    fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
+    fasta.files
+  })
+  
+  parse.data <- reactive({
+    if (is.null(fasta.files())) return(NULL)
+    
+    # initialize
+    n.table <- data.frame()
+    n <- length(fasta.files())
+    
+    withProgress(message = 'Analyzing ', value = 0, {
+      for (assembly in fasta.files()){
+        title <- basename(assembly)
+        incProgress(1/n, detail = title)
+        lengths <- Fasta2length(assembly)
+        x <- seq(1, 100, by=1)
+        y <- sapply(x, function(x) Nvalue(x, lengths))
+        name <- rep(title, length(x))
+        dat <- data.frame(assembly=name, x=x, y=y)
+        n.table <- rbind(n.table, dat)
+      }
+    })
+    as.data.frame(n.table)
+    })
+  
+  output$ntable = DT::renderDataTable({
+    if (is.null(parse.data())) return(NULL)
+    parse.data()
+  })
+  
+  plotInput <- reactive({
+    df <- parse.data()
+    p <- ggplot(data=df, aes(x=x, y=y/1000, group=assembly, colour=assembly)) + 
+      scale_y_log10() +
+      geom_line(size = 0.5, linetype="dotted") + 
+      geom_point(aes(shape=assembly), size = 1.5) +
+      geom_vline(xintercept = 50, linetype="dotted", 
+                 color = "red", size=0.5) +
+      ggtitle("NG graphs of the assemblies in scaffold length") + 
+      labs(x = "NG", y = "Scaffold NG length (kb)") +
+      theme(axis.text.x = element_text(colour="grey20",size=8,angle=0,hjust=.5,vjust=.5,face="plain"),
+            axis.text.y = element_text(colour="grey20",size=8,angle=0,hjust=1,vjust=0,face="plain"),
+            axis.title.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=0,face="plain"),
+            axis.title.y = element_text(colour="grey20",size=10,angle=90,hjust=.5,vjust=.5,face="plain"),
+            legend.justification = c(0,1),
+            legend.position = c(0.1,0.5),
+            legend.title = element_blank(),
+            legend.text = element_text(size=10),
+            legend.key = element_rect(colour = NA, fill = NA),
+            legend.key.size = unit(0.8, 'lines'),
+            legend.background = element_rect(fill="transparent"),
+            plot.title = element_text(margin=margin(b=0), size = 14))
+  })
+  
+  output$plot <- renderPlot({
+    print(plotInput())
+  })
+  
+  output$downloadPlot <- downloadHandler(
+    filename = function() { paste(input$outfile, input$format, sep=".") },
+    content = function(file) {
+    if(input$format == "png")
+      png(file, width = 640, height = 480, units = "px") # open the png device
+    else
+      pdf(file, width = 8, height = 6) # open the pdf device
+    print(plotInput())
+    dev.off()  # turn the device off
+    }
+  )
+}
+  
+# Run the application 
+shinyApp(ui = ui, server = server)
+
