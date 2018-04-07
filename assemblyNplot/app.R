@@ -1,10 +1,22 @@
+<<<<<<< HEAD
 # assemblyNplot.shinyapp
 # a Shiny web application that draws N graphs from a zip of denovo assemblies
+=======
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+>>>>>>> origin/master
 
 library("shiny")
 library("shinyBS")
 library("seqinr")
 library("ggplot2")
+<<<<<<< HEAD
 library("scales")
 library("DT")
 
@@ -22,6 +34,16 @@ Fasta2length <-function(fastaFile) {
   #fa <- read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE)
   fl <- getLength(read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE))
   # return a vector of lengths
+=======
+library("DT")
+
+options(shiny.maxRequestSize=1000*1024^2)
+
+Fasta2length <-function(fastaFile) {
+  fa <- read.fasta(file = fastaFile)
+  fl <- getLength(fa)
+  # return kilobases
+>>>>>>> origin/master
   as.vector(fl)
 }
 
@@ -43,6 +65,7 @@ Nvalue <- function(lim, x, na.rm = TRUE){
   NXX
 }
 
+<<<<<<< HEAD
 # format with thousand separator
 fnum <- function(x){
   return(format(as.numeric(x), nsmall=0, big.mark="'"))
@@ -94,6 +117,38 @@ server <- function(input, output) {
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
     unlink("__MACOSX", recursive=TRUE)
+=======
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+  sidebarLayout(
+    # show file import and molecule filters
+    sidebarPanel(
+       tipify(fileInput("upload", "Upload", accept = ".zip"), 
+              "A zip files containing all fasta assemblies to plot"),
+       br(),
+       actionButton("process", "Process uploaded data"),
+       hr(),
+       textInput('outfile', "name for output File:", value="assemblyNplot"),
+       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="png"),
+       downloadButton('downloadPlot', 'Download Plot')
+    ),
+  
+  mainPanel(
+    plotOutput('plot', width = "100%"),
+    div(DT::dataTableOutput('ntable'), style = "font-size: 75%; width: 75%")
+  )
+)
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+  fasta.files <- eventReactive({input$process}, {
+    unzip.files <- unzip(input$upload$datapath, list = FALSE)
+    # get rid of hidden and empty stuff
+    fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
+>>>>>>> origin/master
     fasta.files
   })
   
@@ -109,17 +164,28 @@ server <- function(input, output) {
         title <- basename(assembly)
         incProgress(1/n, detail = title)
         lengths <- Fasta2length(assembly)
+<<<<<<< HEAD
         width <- sum(lengths)
         x <- seq(1, 100, by=1)
         y <- sapply(x, function(x) Nvalue(x, lengths))
         name <- rep(title, length(x))
         width <- rep(fnum(width), length(x))
         dat <- data.frame(assembly=paste0(name," (", width,")"), x=x, y=y)
+=======
+        x <- seq(1, 100, by=1)
+        y <- sapply(x, function(x) Nvalue(x, lengths))
+        name <- rep(title, length(x))
+        dat <- data.frame(assembly=name, x=x, y=y)
+>>>>>>> origin/master
         n.table <- rbind(n.table, dat)
       }
     })
     as.data.frame(n.table)
+<<<<<<< HEAD
   })
+=======
+    })
+>>>>>>> origin/master
   
   output$ntable = DT::renderDataTable({
     if (is.null(parse.data())) return(NULL)
@@ -128,6 +194,7 @@ server <- function(input, output) {
   
   plotInput <- reactive({
     df <- parse.data()
+<<<<<<< HEAD
     # convert to kilobases in plot
     p <- ggplot(data=df, aes(x=x, y=y/1000, group=assembly, colour=assembly)) + 
       scale_y_continuous(trans="log10",labels = waiver()) +
@@ -138,6 +205,16 @@ server <- function(input, output) {
                  color = "red", size=0.5) +
       ggtitle("NG graphs of the assemblies in scaffold length") + 
       labs(x = "NG%", y = "Contig/Scaffold length (kb)") +
+=======
+    p <- ggplot(data=df, aes(x=x, y=y/1000, group=assembly, colour=assembly)) + 
+      scale_y_log10() +
+      geom_line(size = 0.5, linetype="dotted") + 
+      geom_point(aes(shape=assembly), size = 1.5) +
+      geom_vline(xintercept = 50, linetype="dotted", 
+                 color = "red", size=0.5) +
+      ggtitle("NG graphs of the assemblies in scaffold length") + 
+      labs(x = "NG", y = "Scaffold NG length (kb)") +
+>>>>>>> origin/master
       theme(axis.text.x = element_text(colour="grey20",size=8,angle=0,hjust=.5,vjust=.5,face="plain"),
             axis.text.y = element_text(colour="grey20",size=8,angle=0,hjust=1,vjust=0,face="plain"),
             axis.title.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=0,face="plain"),
@@ -149,16 +226,25 @@ server <- function(input, output) {
             legend.key = element_rect(colour = NA, fill = NA),
             legend.key.size = unit(0.8, 'lines'),
             legend.background = element_rect(fill="transparent"),
+<<<<<<< HEAD
             plot.title = element_text(margin=margin(b=0), size = 16))
   })
   
   output$plot <- renderPlot({
     plot(plotInput(), width="640px", height="480px")
+=======
+            plot.title = element_text(margin=margin(b=0), size = 14))
+  })
+  
+  output$plot <- renderPlot({
+    print(plotInput())
+>>>>>>> origin/master
   })
   
   output$downloadPlot <- downloadHandler(
     filename = function() { paste(input$outfile, input$format, sep=".") },
     content = function(file) {
+<<<<<<< HEAD
       if(input$format == "png")
         png(file, width = 640, height = 480, units = "px") # open the png device
       else
@@ -171,3 +257,18 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+=======
+    if(input$format == "png")
+      png(file, width = 640, height = 480, units = "px") # open the png device
+    else
+      pdf(file, width = 8, height = 6) # open the pdf device
+    print(plotInput())
+    dev.off()  # turn the device off
+    }
+  )
+}
+  
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+>>>>>>> origin/master
