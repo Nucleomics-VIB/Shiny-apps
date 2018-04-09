@@ -88,7 +88,7 @@ ui <- fluidPage(
       selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="pdf"),
       downloadButton('downloadPlot', 'Download Plot')
     ),
-
+    
     mainPanel(
       plotOutput('plot', width = "100%"),
       div(DT::dataTableOutput('infotable'), style = "font-size: 75%; width: 75%; align: right")
@@ -135,9 +135,10 @@ server <- function(input, output) {
     minl <- as.numeric(input$minl)
     maxl <- as.numeric(input$maxl)    
     data <- subset(data, len>minl & len<maxl)
-
+    
     # get info for each dataset
     datasets <- as.vector(unique(data$name))
+    n <- length(datasets)
     info <- data.frame()
     withProgress(message = 'Analyzing ', value = 0, {
       for (ds in datasets){
@@ -160,14 +161,14 @@ server <- function(input, output) {
     info <- filter.data()$info
     info[,2:4] <- format(info[,2:4],nsmall = 0, big.mark = "'")
     info
-    }, option=list(columnDefs=list(list(targets=2:4, class="dt-right")))
+  }, option=list(columnDefs=list(list(targets=2:4, class="dt-right")))
   )
   
   plotInput <- reactive({
     if (is.null(filter.data())) return(NULL)
     info <- filter.data()$info
     df <- filter.data()$data
-
+    
     # geom_vline(data=info, xintercept=n50) +
     p <- ggplot(data=df, aes(x=len, group=name, colour=name)) + 
       geom_density(size=1) + 
@@ -184,7 +185,7 @@ server <- function(input, output) {
             legend.key.size = unit(0.8, 'lines'),
             legend.background = element_rect(fill="transparent"),
             plot.title = element_text(margin=margin(b=0), size = 14))
-   
+    
     # , group=name, colour=name, linetype="dotted", size=1) +
     if(input$xscale == "log") {
       p <- p + scale_x_log10(
