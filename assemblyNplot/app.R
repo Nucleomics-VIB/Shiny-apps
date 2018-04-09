@@ -1,10 +1,30 @@
+<<<<<<< HEAD
 # assemblyNplot.shinyapp
 # a Shiny web application that draws N graphs from a zip of denovo assemblies
+=======
+<<<<<<< HEAD
+# assemblyNplot.shinyapp
+# a Shiny web application that draws N graphs from a zip of denovo assemblies
+=======
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
 
 library("shiny")
 library("shinyBS")
 library("seqinr")
 library("ggplot2")
+<<<<<<< HEAD
+library("scales")
+=======
+<<<<<<< HEAD
 library("scales")
 library("DT")
 
@@ -22,6 +42,31 @@ Fasta2length <-function(fastaFile) {
   #fa <- read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE)
   fl <- getLength(read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE))
   # return a vector of lengths
+=======
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
+library("DT")
+
+# you may uncomment the next line to allow large input files (4GB)
+options(shiny.maxRequestSize=4*1000*1024^2)
+# the following test checks if we are running on shinnyapps.io to limit file size dynamically
+# ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
+#if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
+
+app.name <- "assemblyNplot"
+script.version <- "1.0"
+
+# measure sequence lengths from fasta
+Fasta2length <-function(fastaFile) {
+<<<<<<< HEAD
+  #fa <- read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE)
+  fl <- getLength(read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE))
+  # return a vector of lengths
+=======
+  fa <- read.fasta(file = fastaFile)
+  fl <- getLength(fa)
+  # return kilobases
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
   as.vector(fl)
 }
 
@@ -43,6 +88,59 @@ Nvalue <- function(lim, x, na.rm = TRUE){
   NXX
   }
 
+<<<<<<< HEAD
+# format with thousand separator
+fnum <- function(x){
+  return(format(as.numeric(x), nsmall=0, big.mark="'"))
+}
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+  HTML('<style type="text/css">
+       .row-fluid { width: 25%; }
+       .well { background-color: #99CCFF; }
+       .shiny-html-output { font-size: 14px; line-height: 15px; }
+       </style>'),
+  
+  # Application header
+  headerPanel("Plot N-graphs from a Zip of de-novo assembly fasta files"),
+  
+  # Application title
+  titlePanel(
+    windowTitle = "AssemblyNplot",
+    tags$a(href="https://corefacilities.vib.be/nc", target="_blank",
+           img(src='logo.png', align = "right", width="150", height="58.5", alt="VIB Nucleomics Core"))
+  ),
+  
+  sidebarLayout(
+    # show file import and molecule filters
+    sidebarPanel(
+      tipify(fileInput("upload", "Upload", accept = ".zip"), 
+             "A zip files containing all fasta assemblies to plot"),
+      br(),
+      actionButton("process", "Process uploaded data"),
+      hr(),
+      textInput('outfile', "name for output File:", value="assemblyNplot"),
+      selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="pdf"),
+      downloadButton('downloadPlot', 'Download Plot')
+    ),
+    
+    mainPanel(
+      plotOutput('plot', width = "100%"),
+      div(DT::dataTableOutput('ntable'), style = "font-size: 75%; width: 75%")
+    )
+  )
+  )
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+  
+  fasta.files <- eventReactive({input$process}, {
+    unzip.files <- unzip(input$upload$datapath, list = FALSE)
+    # get rid of OSX hidden and empty stuff
+    fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
+    unlink("__MACOSX", recursive=TRUE)
+=======
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   HTML('<style type="text/css">
@@ -88,6 +186,7 @@ server <- function(input, output) {
     unzip.files <- unzip(input$upload$datapath, list = FALSE)
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
+>>>>>>> origin/master
     fasta.files
     })
   
@@ -103,17 +202,37 @@ server <- function(input, output) {
         title <- basename(assembly)
         incProgress(1/n, detail = title)
         lengths <- Fasta2length(assembly)
+<<<<<<< HEAD
         width <- sum(lengths)
         x <- seq(1, 100, by=1)
         y <- sapply(x, function(x) Nvalue(x, lengths))
         name <- rep(title, length(x))
         width <- rep(format(as.numeric(width), nsmall=0, big.mark=","), length(x))
         dat <- data.frame(assembly=paste0(name," (", width,")"), x=x, y=y)
+=======
+<<<<<<< HEAD
+        width <- sum(lengths)
+        x <- seq(1, 100, by=1)
+        y <- sapply(x, function(x) Nvalue(x, lengths))
+        name <- rep(title, length(x))
+        width <- rep(fnum(width), length(x))
+        dat <- data.frame(assembly=paste0(name," (", width,")"), x=x, y=y)
+=======
+        x <- seq(1, 100, by=1)
+        y <- sapply(x, function(x) Nvalue(x, lengths))
+        name <- rep(title, length(x))
+        dat <- data.frame(assembly=name, x=x, y=y)
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
         n.table <- rbind(n.table, dat)
         }
       })
     as.data.frame(n.table)
+<<<<<<< HEAD
+  })
+=======
     })
+>>>>>>> origin/master
   
   output$ntable = DT::renderDataTable({
     if (is.null(parse.data())) return(NULL)
@@ -122,6 +241,10 @@ server <- function(input, output) {
   
   plotInput <- reactive({
     df <- parse.data()
+<<<<<<< HEAD
+    # convert to kilobases in plot
+=======
+<<<<<<< HEAD
     # convert to kilobases in plot
     p <- ggplot(data=df, aes(x=x, y=y/1000, group=assembly, colour=assembly)) + 
       scale_y_continuous(trans="log10",labels = waiver()) +
@@ -132,6 +255,22 @@ server <- function(input, output) {
                  color = "red", size=0.5) +
       ggtitle("NG graphs of the assemblies in scaffold length") + 
       labs(x = "NG%", y = "Contig/Scaffold length (kb)") +
+=======
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
+    p <- ggplot(data=df, aes(x=x, y=y/1000, group=assembly, colour=assembly)) + 
+      scale_y_continuous(trans="log10",labels = waiver()) +
+      annotation_logticks(sides = "l") +
+      geom_line(size = 0.75, linetype="dotted") + 
+      geom_point(aes(shape=assembly), size = 2) +
+      geom_vline(xintercept = 50, linetype="dotted", 
+                 color = "red", size=0.5) +
+      ggtitle("NG graphs of the assemblies in scaffold length") + 
+<<<<<<< HEAD
+      labs(x = "NG%", y = "Contig/Scaffold length (kb)") +
+=======
+      labs(x = "NG", y = "Scaffold NG length (kb)") +
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
       theme(axis.text.x = element_text(colour="grey20",size=8,angle=0,hjust=.5,vjust=.5,face="plain"),
             axis.text.y = element_text(colour="grey20",size=8,angle=0,hjust=1,vjust=0,face="plain"),
             axis.title.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=0,face="plain"),
@@ -143,25 +282,66 @@ server <- function(input, output) {
             legend.key = element_rect(colour = NA, fill = NA),
             legend.key.size = unit(0.8, 'lines'),
             legend.background = element_rect(fill="transparent"),
+<<<<<<< HEAD
             plot.title = element_text(margin=margin(b=0), size = 16))
   })
   
   output$plot <- renderPlot({
     plot(plotInput(), width="640px", height="480px")
+=======
+<<<<<<< HEAD
+            plot.title = element_text(margin=margin(b=0), size = 16))
+  })
+  
+  output$plot <- renderPlot({
+    plot(plotInput(), width="640px", height="480px")
+=======
+            plot.title = element_text(margin=margin(b=0), size = 14))
+  })
+  
+  output$plot <- renderPlot({
+    print(plotInput())
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
   })
   
   output$downloadPlot <- downloadHandler(
     filename = function() { paste(input$outfile, input$format, sep=".") },
     content = function(file) {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
       if(input$format == "png")
         png(file, width = 640, height = 480, units = "px") # open the png device
       else
         pdf(file, width = 8, height = 6) # open the pdf device
       plot(plotInput())
       dev.off()  # turn the device off
+<<<<<<< HEAD
+=======
+    }
+  )
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+=======
+    if(input$format == "png")
+      png(file, width = 640, height = 480, units = "px") # open the png device
+    else
+      pdf(file, width = 8, height = 6) # open the pdf device
+    print(plotInput())
+    dev.off()  # turn the device off
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
     }
   )
 }
   
 # Run the application 
 shinyApp(ui = ui, server = server)
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
+>>>>>>> bf115d414a5f9523a97d59faf52ed744a92d0d0f
