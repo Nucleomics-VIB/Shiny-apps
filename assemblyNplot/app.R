@@ -1,6 +1,5 @@
 # assemblyNplot.shinyapp
 # a Shiny web application that draws N graphs from a zip of denovo assemblies
-
 library("shiny")
 library("shinyBS")
 library("seqinr")
@@ -93,6 +92,7 @@ server <- function(input, output) {
     unzip.files <- unzip(input$upload$datapath, list = FALSE)
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
+    unlink("__MACOSX", recursive=TRUE)
     fasta.files
     })
   
