@@ -56,6 +56,9 @@ fnum <- function(x) {
   return(format(as.numeric(x), nsmall=0, big.mark="'"))
 }
 
+# CLEANUP OLD DATA
+cleanup()
+    
 # Define UI for application that draws a histogram
 ui <- fluidPage(
   HTML('<style type="text/css">
@@ -98,9 +101,6 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   fasta.files <- eventReactive({input$process}, {
-    # CLEANUP OLD DATA
-    cleanup()
-    
     unzip.files <- unzip(input$upload$datapath, list = FALSE)
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
