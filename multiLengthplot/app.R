@@ -168,8 +168,7 @@ server <- function(input, output) {
     if (is.null(filter.data())) return(NULL)
     info <- filter.data()$info
     df <- filter.data()$data
-    
-    # geom_vline(data=info, xintercept=n50) +
+
     p <- ggplot(data=df, aes(x=len, group=name, colour=name)) + 
       geom_density(size=1) + 
       ggtitle("Density distributions") + 
@@ -186,13 +185,13 @@ server <- function(input, output) {
             legend.background = element_rect(fill="transparent"),
             plot.title = element_text(margin=margin(b=0), size = 14))
     
-    # , group=name, colour=name, linetype="dotted", size=1) +
     if(input$xscale == "log") {
       p <- p + scale_x_log10(
         breaks = scales::trans_breaks("log10", function(x) 10^x),
         labels = scales::trans_format("log10", scales::math_format(10^.x))
       ) + annotation_logticks(sides="b")
     }
+
     # add N50 lines
     p + geom_vline(data=info, aes(xintercept=n50, group=name, colour=name), size=0.75)
   })
