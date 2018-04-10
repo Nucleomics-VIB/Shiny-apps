@@ -74,7 +74,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       # show file import and length filters
-      tipify(fileInput("upload", "Upload", accept = c('.txt', '.text')), 
+      tipify(fileInput("upload", "Upload", accept = c('.zip')), 
              "A zip files containing 1 or more length distributions to plot"),
       radioButtons("xscale", "X-Scale",
                    choices = c(Linear = "lin",
