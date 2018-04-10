@@ -26,7 +26,7 @@ getLengths <- function(textfile) {
                    colClasses=c("numeric"),
                    blank.lines.skip=TRUE
   )
-  df <- as.data.frame(df)
+  df <- as.vector(df$len)
   df
 }
 
