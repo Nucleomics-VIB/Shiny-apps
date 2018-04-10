@@ -16,6 +16,15 @@ options(shiny.maxRequestSize=4*1000*1024^2)
 app.name <- "assemblyNplot"
 script.version <- "1.0"
 
+# cleanup from previous uploads
+cleanup <- function () {
+  folders <- list.dirs('.', recursive=FALSE)
+  # keep only the following folders
+  keep <- c("www", "Data")
+  remove <- subset(folders, !grepl(paste0(keep, collapse="|"), folders))
+  unlink(remove, recursive=TRUE)
+}
+
 # measure sequence lengths from fasta
 Fasta2length <-function(fastaFile) {
   #fa <- read.fasta(file = fastaFile, as.string = TRUE, seqonly = TRUE)
@@ -89,6 +98,9 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   fasta.files <- eventReactive({input$process}, {
+    # CLEANUP OLD DATA
+    cleanup()
+    
     unzip.files <- unzip(input$upload$datapath, list = FALSE)
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))

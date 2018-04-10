@@ -15,8 +15,16 @@ options(shiny.maxRequestSize=1000*1024^2)
 app.name <- "multiLengthPlot"
 script.version <- "1.0"
 
-# rad lengths from text file
+# cleanup from previous uploads
+cleanup <- function () {
+  folders <- list.dirs('.', recursive=FALSE)
+  # keep only the following folders
+  keep <- c("www", "Data")
+  remove <- subset(folders, !grepl(paste0(keep, collapse="|"), folders))
+  unlink(remove, recursive=TRUE)
+}
 
+# read lengths from text file
 getLengths <- function(textfile) {
   df <- read.table(textfile, 
                    stringsAsFactors = FALSE,
@@ -100,6 +108,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   density.files <- eventReactive({input$process}, {
+    # CLEANUP OLD DATA
+    cleanup()
+    
     unzip.files <- unzip(input$upload$datapath, list = FALSE)
     # get rid of OSX hidden and empty stuff
     density.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
