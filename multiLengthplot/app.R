@@ -7,13 +7,13 @@ library("scales")
 library("DT")
 
 # you may uncomment the next line to allow large input files (4GB)
-options(shiny.maxRequestSize=4*1000*1024^2)
+options(shiny.maxRequestSize=1000*1024^2)
 # the following test checks if we are running on shinnyapps.io to limit file size dynamically
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "multiLengthPlot"
-script.version <- "1.1"
+script.version <- "1.2"
 
 # cleanup from previous uploads
 cleanup <- function () {
@@ -22,20 +22,6 @@ cleanup <- function () {
   keep <- c("www", "Data")
   remove <- subset(folders, !grepl(paste0(keep, collapse="|"), folders))
   unlink(remove, recursive=TRUE)
-}
-
-# read lengths from text file
-getLengths <- function(textfile) {
-  df <- read.table(textfile, 
-                   stringsAsFactors = FALSE,
-                   header = FALSE,
-                   sep = "",
-                   col.names=c("len"),
-                   colClasses=c("numeric"),
-                   blank.lines.skip=TRUE
-  )
-  df <- as.vector(df$len)
-  df
 }
 
 # compute XNXX function
@@ -128,13 +114,12 @@ server <- function(input, output) {
     n <- length(density.files())
     data <- data.frame()
     withProgress(message = 'Importing ', value = 0, {
-      for (dataset in density.files()){
-        title <- basename(dataset)
+      for (dfile in density.files()){
+        title <- basename(dfile)
         title <- gsub('.txt$','',title)
         incProgress(1/n, detail = title)
-        
-        # collect lengths from a single file
-        lengths <- getLengths(dataset)
+        # collect lengths from a single file with scan
+        lengths <- scan(dfile, integer(), quote = "", blank.lines.skip = TRUE)
         dat <- data.frame(name=title, len=lengths)
         data <- rbind(data, dat)
       }
