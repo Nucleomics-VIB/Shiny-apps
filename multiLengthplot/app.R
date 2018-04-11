@@ -13,7 +13,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "multiLengthPlot"
-script.version <- "1.0"
+script.version <- "1.1"
 
 # cleanup from previous uploads
 cleanup <- function () {
@@ -91,6 +91,10 @@ ui <- fluidPage(
                    choices = c(Linear = "lin",
                                Log = "log"),
                    selected = "lin"),
+      radioButtons("stat", "Stat",
+                   choices = c(density = "density",
+                               scaled = "scaled"),
+                   selected = "density"),
       textInput('minl', 'Min length', value=0),
       textInput('maxl', 'Max length', value=1E+5),
       actionButton("process", "Plot filtered data"),
@@ -180,10 +184,17 @@ server <- function(input, output) {
     info <- filter.data()$info
     df <- filter.data()$data
 
-    p <- ggplot(data=df, aes(x=len, group=name, colour=name)) + 
-      geom_density(size=1) + 
+    if(input$stat == "scaled") {
+      p <- ggplot(data=df, aes(x=len, y=..scaled.., group=name, colour=name)) +
+      ggtitle("Frequency distributions") + 
+      labs(x = "length", y = "frequency")
+    } else {
+      p <- ggplot(data=df, aes(x=len, group=name, colour=name)) +
       ggtitle("Density distributions") + 
-      labs(x = "length", y= "density") +
+      labs(x = "length", y = "density")
+    }
+    
+    p <- p + geom_density(size=1) + 
       theme(axis.text.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=.5,face="plain"),
             axis.text.y = element_text(colour="grey20",size=10,angle=0,hjust=1,vjust=0,face="plain"),
             axis.title.x = element_text(colour="grey20",size=10,angle=0,hjust=.5,vjust=0,face="plain"),
@@ -203,7 +214,7 @@ server <- function(input, output) {
       ) + annotation_logticks(sides="b")
     }
 
-    # add N50 lines
+    # add N50 lines and plot
     p + geom_vline(data=info, aes(xintercept=n50, group=name, colour=name), size=0.75)
   })
   
