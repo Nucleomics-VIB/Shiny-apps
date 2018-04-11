@@ -119,8 +119,8 @@ server <- function(input, output) {
         title <- gsub('.txt$','',title)
         incProgress(1/n, detail = title)
         # collect lengths from a single file with scan
-        lengths <- scan(dfile, integer(), quote = "", blank.lines.skip = TRUE)
-        dat <- data.frame(name=title, len=lengths)
+        lengths <- scan(dfile, numeric(), quote = "", blank.lines.skip = TRUE)
+        dat <- data.frame(name=title, len=as.vector(lengths))
         data <- rbind(data, dat)
       }
     })
