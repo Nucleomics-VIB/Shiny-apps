@@ -13,7 +13,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "multiLengthPlot"
-script.version <- "1.2"
+script.version <- "1.3"
 
 # cleanup from previous uploads
 cleanup <- function () {
@@ -59,7 +59,9 @@ ui <- fluidPage(
        </style>'),
   
   # Application header
-  headerPanel("Plot density distributions from a Zip of length distributions"),
+  headerPanel(paste0(
+    "Plot from a Zip of length distributions (v",
+    script.version,")")),
   
   # Application title
   titlePanel(
@@ -73,6 +75,8 @@ ui <- fluidPage(
       # show file import and length filters
       tipify(fileInput("upload", "Upload", accept = c('.zip')), 
              "A zip files containing 1 or more length distributions to plot"),
+      tipify(textInput('maxrec', 'max records per file', value=100000),
+      "Do not exceed 5M to avoid reaching the RAM limit"),
       radioButtons("xscale", "X-Scale",
                    choices = c(Linear = "lin",
                                Log = "log"),
@@ -119,7 +123,11 @@ server <- function(input, output) {
         title <- gsub('.txt$','',title)
         incProgress(1/n, detail = title)
         # collect lengths from a single file with scan
-        lengths <- scan(dfile, numeric(), quote = "", blank.lines.skip = TRUE)
+        lengths <- scan(dfile, 
+                        numeric(), 
+                        quote = "", 
+                        blank.lines.skip = TRUE,
+                        nmax = input$maxrec)
         dat <- data.frame(name=title, len=as.vector(lengths))
         data <- rbind(data, dat)
       }
@@ -161,22 +169,24 @@ server <- function(input, output) {
     info <- filter.data()$info
     info[,2:4] <- format(info[,2:4],nsmall = 0, big.mark = "'")
     info
-  }, option=list(columnDefs=list(list(targets=2:4, class="dt-right")))
+  }, option=list(dom = 't', 
+                 columnDefs=list(list(targets=2:4, class="dt-right"))
+                 )
   )
   
   plotInput <- reactive({
     if (is.null(filter.data())) return(NULL)
     info <- filter.data()$info
     df <- filter.data()$data
-
+    
     if(input$stat == "scaled") {
       p <- ggplot(data=df, aes(x=len, y=..scaled.., group=name, colour=name)) +
-      ggtitle("Frequency distributions") + 
-      labs(x = "length", y = "frequency")
+        ggtitle("Frequency distributions") + 
+        labs(x = "length", y = "frequency")
     } else {
       p <- ggplot(data=df, aes(x=len, group=name, colour=name)) +
-      ggtitle("Density distributions") + 
-      labs(x = "length", y = "density")
+        ggtitle("Density distributions") + 
+        labs(x = "length", y = "density")
     }
     
     p <- p + geom_density(size=1) + 
@@ -198,7 +208,7 @@ server <- function(input, output) {
         labels = scales::trans_format("log10", scales::math_format(10^.x))
       ) + annotation_logticks(sides="b")
     }
-
+    
     # add N50 lines and plot
     p + geom_vline(data=info, aes(xintercept=n50, group=name, colour=name), size=0.75)
   })
