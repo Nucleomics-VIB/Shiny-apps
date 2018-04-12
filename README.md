@@ -49,7 +49,7 @@ The **[RFilterRNASeq.shinyapp](RFilterRNASeq)** app loads a StatisticalResults.x
 
 The **[assemblyNplot.shinyapp](assemblyNplot)** app app plots N-graphs from a zip of fasta genome assemblies (one or more fasta files).
 
-### **multilengthplot.shinyapp** 
+### **multiLengthplot.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
 
 ![RFilterRNASeq](pictures/multilengthplot.png)
