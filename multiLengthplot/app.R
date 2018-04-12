@@ -73,24 +73,24 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       # show file import and length filters
-      tipify(fileInput("upload", "Upload", accept = c('.zip')), 
+      tipify(fileInput('upload', 'Upload', accept = c('.zip')), 
              "A zip files containing 1 or more length distributions to plot"),
       tipify(textInput('maxrec', 'max records per file', value=100000),
       "Do not exceed 5M to avoid reaching the RAM limit"),
-      radioButtons("xscale", "X-Scale",
+      radioButtons('xscale', 'X-Scale',
                    choices = c(Linear = "lin",
                                Log = "log"),
                    selected = "lin"),
-      radioButtons("stat", "Stat",
+      radioButtons('stat', 'Stat',
                    choices = c(density = "density",
                                scaled = "scaled"),
                    selected = "density"),
       textInput('minl', 'Min length', value=0),
       textInput('maxl', 'Max length', value=1E+5),
-      actionButton("process", "Plot filtered data"),
+      actionButton('process', 'Plot filtered data'),
       hr(),
-      textInput('outfile', "name for output File:", value="densityPlot"),
-      selectInput("format", "Output format (png or pdf):", c("png", "pdf"), selected="pdf"),
+      textInput('outfile', 'name for output File:', value="densityPlot"),
+      selectInput('format', 'Output format (png or pdf):', c("png", "pdf"), selected="pdf"),
       downloadButton('downloadPlot', 'Download Plot')
     ),
     
@@ -123,11 +123,17 @@ server <- function(input, output) {
         title <- gsub('.txt$','',title)
         incProgress(1/n, detail = title)
         # collect lengths from a single file with scan
-        lengths <- scan(dfile, 
+        all.lengths <- scan(dfile, 
                         numeric(), 
                         quote = "", 
-                        blank.lines.skip = TRUE,
-                        nmax = input$maxrec)
+                        blank.lines.skip = TRUE)
+        # data size
+        recnum <- length(all.lengths)
+
+        # take a random sample of smallest(maxrec, recnum)
+        sample.size <- min(as.numeric(c(recnum, input$maxrec)))
+        lengths <- sample(all.lengths, sample.size)
+        
         dat <- data.frame(name=title, len=as.vector(lengths))
         data <- rbind(data, dat)
       }

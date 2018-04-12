@@ -26,10 +26,12 @@ The **[RNASeqFiltering.shinyapp](RNASeqFiltering)** app loads a *StatisticalResu
 
 ![fpkm2heatmap](pictures/fpkm2heatmap.png)
 
-The **[fpkm2heatmap.shinyapp](fpkm2heatmap)** app loads a FPKM Excel file provided by the Nucleomics Core and a list of EnsEMBL gene IDs (signature) and produced a heatmap plot taht can be tuned to your needs. A live version was posted to https://nucleomics-core.shinyapps.io/fpkm2heatmap/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/fpkm2heatmap-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
+The **[fpkm2heatmap.shinyapp](fpkm2heatmap)** app loads a FPKM Excel file provided by the Nucleomics Core and a list of EnsEMBL gene IDs (signature) and produced a heatmap plot that can be tuned to your needs. A live version was posted to https://nucleomics-core.shinyapps.io/fpkm2heatmap/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/fpkm2heatmap/Data/fpkm2heatmap-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
 
 ### **RBioanalyzer.shinyapp** 
 *[[Shiny-apps](#shiny-apps)]*
+
+![RFilterRNASeq](pictures/RBioanalyzer.png)
 
 The **[RBioanalyzer.shinyapp](RBioanalyzer)** app loads 2 to 3 Bioanalyzer exported csv files and creates an overlay plot. A live version was posted to https://nucleomics-core.shinyapps.io/RBioanalyzer/. A sample ZIP file is present in the 'Data' subfolder for your convenience [(sample.zip)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RBioanalyzer/Data/sample.zip). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RBioanalyzer/Data/RBioanalyzer-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
 
@@ -39,6 +41,20 @@ The **[RBioanalyzer.shinyapp](RBioanalyzer)** app loads 2 to 3 Bioanalyzer expor
 ![RFilterRNASeq](pictures/RFilterRNASeq.png)
 
 The **[RFilterRNASeq.shinyapp](RFilterRNASeq)** app loads a StatisticalResults.xlsx file obtained from the Core, filters each contrast based on user input, and creates a Venn plot and a count table. The Venn plot supports up to 5 contrasts and is not created beyond that. A live version was posted to https://nucleomics-core.shinyapps.io/RFilterRNASeq/. A sample excel file with 2000 gene rows is present in the 'Data' subfolder for your convenience [(StatisticalResults.xlsx)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RFilterRNASeq/Data/StatisticalResults.xlsx). A bundle can be downloaded [(here)](https://github.com/Nucleomics-VIB/Shiny-apps/raw/master/RFilterRNASeq/Data/RFilterRNASeq-bundle.zip) to install the tool on your computer (you will need RStudio and a few R packages to run it)
+
+### **assemblyNplot.shinyapp** 
+*[[Shiny-apps](#shiny-apps)]*
+
+![assemblyNplot](pictures/assemblyNplot.png)
+
+The **[assemblyNplot.shinyapp](assemblyNplot)** app app plots N-graphs from a zip of fasta genome assemblies (one or more fasta files).
+
+### **multilengthplot.shinyapp** 
+*[[Shiny-apps](#shiny-apps)]*
+
+![RFilterRNASeq](pictures/multilengthplot.png)
+
+The **[multilengthplot.shinyapp](multilengthplot)** app plots length densities from a zip of text files reporting lengths (eg. lengths of fasta records or whatever length you can measure, one or more text files).
 
 
 *[[back-to-top](#top)]*  
