@@ -54,7 +54,7 @@ The **[assemblyNplot.shinyapp](assemblyNplot)** app app plots N-graphs from a zi
 
 ![RFilterRNASeq](pictures/multilengthplot.png)
 
-The **[multilengthplot.shinyapp](multilengthplot)** app plots length densities from a zip of text files reporting lengths (eg. lengths of fasta records or whatever length you can measure, one or more text files).
+The **[multiLengthplot.shinyapp](multiLengthplot)** app plots length densities from a zip of text files reporting lengths (eg. lengths of fasta records or whatever length you can measure, one or more text files).
 
 
 *[[back-to-top](#top)]*  
