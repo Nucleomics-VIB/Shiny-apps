@@ -17,7 +17,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.3.1"
+script.version <- "1.3.2"
 
 # maximum signature length
 maxlen <- 200
@@ -30,7 +30,7 @@ ui <- fluidPage(
        .shiny-html-output { font-size: 14px; line-height: 15px; }
        </style>'),
   # Application header
-  headerPanel(tags$h3("Create a heamap plot for selected genes (RNASeq fpkm data)")),
+  headerPanel("Create a heatmap plot for selected genes (RNASeq fpkm data)"),
 
   # Application title
   titlePanel(
@@ -114,8 +114,17 @@ server <- function(input, output) {
     chromosome.col <- which(colnames(dat)==as.vector("Chromosome"))
     fpkm.data <- dat[,c(2,1,3:(chromosome.col-1))]
 
+	# define row names
+    # row.names(fpkm.data) <- paste(fpkm.data[,1], fpkm.data[,2], sep=":")
+	# define gene names based on input$genename ("Gene_symbol", "ENSembl_GID", "both")
+	if ( input$genename == "Gene_symbol") {
+		row.names(fpkm.data) <- fpkm.data[,1]
+		} else if ( input$genename == "ENSembl_GID") {
+			row.names(fpkm.data) <- fpkm.data[,2]
+			} else { 
+				row.names(fpkm.data) <- paste(fpkm.data[,1], fpkm.data[,2], sep=":")
+				}
     # remove some columns
-    row.names(fpkm.data) <- paste(fpkm.data[,1], fpkm.data[,2], sep=":")
     fpkm.data <- fpkm.data[,-1]
 
     # kick useless part of names for samples
@@ -241,9 +250,7 @@ server <- function(input, output) {
     })
 
   output$downloadTable <- downloadHandler(
-    filename = function() {
-      paste(input$outfile, "_data.xlsx", sep="")
-    },
+    filename = function() { paste(input$outfile, "_data.xlsx", sep="") },
     content = function(file) {
       hs <- createStyle(textDecoration = "BOLD", fontColour = "#FFFFFF", fontSize=12,
                         fontName="Calibri", fgFill = "#4F80BD")
