@@ -1,0 +1,55 @@
+{
+    "createdAt": "2018-05-30T07:39:02",
+    "files": [
+        {
+            "createdAt": "2018-05-30T07:39:02",
+            "description": "",
+            "fileSize": 783,
+            "fileTypeId": "PacBio.FileTypes.JsonReport",
+            "isChunked": false,
+            "modifiedAt": "2018-05-30T07:39:02",
+            "name": "adapter_xml",
+            "path": "/opt/pacbio/smrtlink/userdata/jobs_root/000/000009/dataset-reports/adapter_xml/adapter_xml.json",
+            "sourceId": "pbreports.tasks.adapter_report_xml",
+            "uniqueId": "43489048-c161-4b85-8f53-94f09259505f"
+        },
+        {
+            "createdAt": "2018-05-30T07:39:01",
+            "description": "",
+            "fileSize": 2283,
+            "fileTypeId": "PacBio.FileTypes.JsonReport",
+            "isChunked": false,
+            "modifiedAt": "2018-05-30T07:39:01",
+            "name": "filter_stats_xml",
+            "path": "/opt/pacbio/smrtlink/userdata/jobs_root/000/000009/dataset-reports/filter_stats_xml/filter_stats_xml.json",
+            "sourceId": "pbreports.tasks.filter_stats_report_xml",
+            "uniqueId": "c7758fe3-9f20-4024-9c1e-6ee1f8ca0316"
+        },
+        {
+            "createdAt": "2018-05-30T07:39:02",
+            "description": "",
+            "fileSize": 1821,
+            "fileTypeId": "PacBio.FileTypes.JsonReport",
+            "isChunked": false,
+            "modifiedAt": "2018-05-30T07:39:02",
+            "name": "control",
+            "path": "/opt/pacbio/smrtlink/userdata/jobs_root/000/000009/dataset-reports/control/control.json",
+            "sourceId": "pbreports.tasks.control_report",
+            "uniqueId": "f27276eb-8f2a-4c80-8ec9-80f2b3892d0e"
+        },
+        {
+            "createdAt": "2018-05-30T07:39:02",
+            "description": "",
+            "fileSize": 3322,
+            "fileTypeId": "PacBio.FileTypes.JsonReport",
+            "isChunked": false,
+            "modifiedAt": "2018-05-30T07:39:02",
+            "name": "loading_xml",
+            "path": "/opt/pacbio/smrtlink/userdata/jobs_root/000/000009/dataset-reports/loading_xml/loading_xml.json",
+            "sourceId": "pbreports.tasks.loading_report_xml",
+            "uniqueId": "372ba788-5c25-4b85-9504-86b20338aa69"
+        }
+    ],
+    "updatedAt": "2018-05-30T07:39:02",
+    "version": "0.2.2"
+}

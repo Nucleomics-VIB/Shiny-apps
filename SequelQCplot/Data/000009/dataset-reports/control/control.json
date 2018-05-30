@@ -1,0 +1,61 @@
+{
+    "_comment": "Generated with pbcommand version 0.6.7 at 2018-05-30T07:39:02.642806",
+    "attributes": [
+        {
+            "id": "control.reads_n",
+            "name": "Number of of Control Reads",
+            "value": 16754
+        },
+        {
+            "id": "control.readlength_mean",
+            "name": "Control Read Length Mean",
+            "value": 33712
+        },
+        {
+            "id": "control.concordance_mean",
+            "name": "Control Read Concordance Mean",
+            "value": 0.859731
+        },
+        {
+            "id": "control.concordance_mode",
+            "name": "Control Read Concordance Mode",
+            "value": 0.87
+        }
+    ],
+    "dataset_uuids": [],
+    "id": "control",
+    "plotGroups": [
+        {
+            "id": "control.readlength_plotgroup",
+            "legend": null,
+            "plots": [
+                {
+                    "caption": "Polymerase RL",
+                    "id": "control.readlength_plotgroup.readlength_plot",
+                    "image": "readlength_plot.png",
+                    "title": "Polymerase RL"
+                }
+            ],
+            "thumbnail": null,
+            "title": "Control Read Length"
+        },
+        {
+            "id": "control.concordance_plotgroup",
+            "legend": null,
+            "plots": [
+                {
+                    "caption": "Concordance",
+                    "id": "control.concordance_plotgroup.concordance_plot",
+                    "image": "concordance_plot.png",
+                    "title": "Concordance"
+                }
+            ],
+            "thumbnail": null,
+            "title": "Polymerase Read Quality"
+        }
+    ],
+    "tables": [],
+    "title": "Report control",
+    "uuid": "f27276eb-8f2a-4c80-8ec9-80f2b3892d0e",
+    "version": "1.0.0"
+}
