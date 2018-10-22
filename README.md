@@ -8,6 +8,8 @@ Please refer to the accompanying **[wiki](https://github.com/Nucleomics-VIB/shin
 
 Read the header of each App.R to find out which packages you need to install on your server to have the code do its job.
 
+A server hosting these apps is located **[here](https://shiny.ugent.be/)** (you are welcome to use it but please limit your queries and file sizes)
+
 ## Shiny-apps
 *[[back-to-top](#top)]*  
 
