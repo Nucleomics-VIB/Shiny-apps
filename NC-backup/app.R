@@ -79,21 +79,22 @@ server <- function(input, output, session) {
   
   # load and process du.log
   du <- read_csv(dulogfile,
-                 col_names = c("time.s","date","path","size")
+				col_names = c("time.s","date","path","size")
   )
   
   df <- read_csv(dflogfile,
-                 col_names = c("time.s","date","used","remaining","used%")
+ 				col_names = c("time.s","date","used","remaining","used%")
   )
   df <- as.data.frame(df)
-  df$date <- as.character(as_datetime(as.numeric(df$time.s), tz="Europe/Brussels"))
+  df$date <- as.character(as_datetime(as.numeric(df$time.s), 
+  				tz="Europe/Brussels"))
   
   # remove path head
   du$path <- gsub(base,"",du$path)
   
   # add more columns
   du$list <- as.list(strsplit(du$path, "/"))
-  du$depth <- lapply(du$list,length)
+  du$depth <- lapply(du$list, length)
   max.depth <- max(unlist(du$depth))
   
   # latest data = current
@@ -103,7 +104,9 @@ server <- function(input, output, session) {
   sel.date <- as_datetime(sel.time, tz="Europe/Brussels")
   
   # unique list of named timestamps
-  timelist <- setNames(unique(du$time.s),as_datetime(unique(du$time.s), tz="Europe/Brussels"))
+  timelist <- setNames(unique(du$time.s), 
+  				as_datetime(unique(du$time.s), 
+  				tz="Europe/Brussels"))
   
   # update slider
   observe({
@@ -125,9 +128,11 @@ server <- function(input, output, session) {
     if (is.null(du)) return(NULL)
     # react on slider changes
     # filter at depth and time
-    curr.sel <- subset(du, du$depth==input$depth & du$time.s==as.numeric(input$timestamp))
+    curr.sel <- subset(du, 
+    				du$depth==input$depth & du$time.s==as.numeric(input$timestamp))
     curr.data <- as.data.frame(curr.sel[,c('path','size')])
-    curr.data$path <- factor(curr.data$path, levels = curr.data$path[order(curr.data$size)])
+    curr.data$path <- factor(curr.data$path, 
+    				levels = curr.data$path[order(curr.data$size)])
     # return filtered data.frame
     curr.data
   })
@@ -140,7 +145,8 @@ server <- function(input, output, session) {
   })
   
   output$currDate <- renderText({
-    sel.date <- as_datetime(as.numeric(input$timestamp), tz="Europe/Brussels")
+    sel.date <- as_datetime(as.numeric(input$timestamp), 
+    				tz="Europe/Brussels")
     paste("Update: ", sel.date)
   })
   
