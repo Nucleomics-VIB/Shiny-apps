@@ -1,3 +1,5 @@
+.RData
+.Rhistory
 *.dcf
 *.zip
 RNASeqEnrich/Data/.Rhistory
