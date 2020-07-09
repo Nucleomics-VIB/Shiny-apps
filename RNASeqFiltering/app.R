@@ -233,7 +233,7 @@ server <- function(input, output) {
 
   output$downloadMM <- downloadHandler(
     filename = function() {
-      print(capture.output(paste(app.name, "_session_info.txt", sep="")))
+      paste(app.name, "_session_info.txt", sep="")
     },
     content = function(file) {
       sink(file, append=TRUE)
