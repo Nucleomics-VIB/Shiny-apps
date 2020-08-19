@@ -17,10 +17,11 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.3.2"
+script.version <- "1.4.0"
 
 # maximum signature length
-maxlen <- 200
+maxlen <- 500
+deflen <- 50
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -57,7 +58,7 @@ ui <- fluidPage(
       actionButton(inputId='goButton', "Plot", style='padding:4px; font-weight: bold; font-size:150%'),
       tipify(selectInput("genename", "Gene name:", c("Gene_symbol", "ENSembl_GID", "both"), selected="Gene_symbol"),"the gene names to show at the right of the rows."),
       textInput('title', "Plot Title:", value="Custom HeatMap"),
-      sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=50),
+      sliderInput("obs", "Number of genes to plot: ", min=1, max=maxlen, value=deflen),
       checkboxInput("show.gene.names", "Show Gene names:", value = TRUE),
       checkboxInput("show.sample.names", "Show Sample names:", value = TRUE),
       checkboxInput("show.legend", "Show legend:", value = TRUE),
@@ -118,7 +119,7 @@ server <- function(input, output) {
     # row.names(fpkm.data) <- paste(fpkm.data[,1], fpkm.data[,2], sep=":")
 	# define gene names based on input$genename ("Gene_symbol", "ENSembl_GID", "both")
 	if ( input$genename == "Gene_symbol") {
-		row.names(fpkm.data) <- fpkm.data[,1]
+		row.names(fpkm.data) <- make.unique(fpkm.data[,1],sep = ".")
 		} else if ( input$genename == "ENSembl_GID") {
 			row.names(fpkm.data) <- fpkm.data[,2]
 			} else { 
