@@ -274,6 +274,8 @@ server <- function(input, output) {
     content = function(file) {
       sink(file, append=TRUE)
       cat(paste("Thanks for using our tool", app.name, script.version, "\n", sep=" "))
+      cat ("This tool generates a Heatmap after clustering the gene expression values (FPKM), or both FPKM values and samples.")
+      cat (" Different distance metrics and options can be set by the user although defaults should do for most cases.")
       cat("\nYou can contact The Nucleomics Core at nucleomics@vib.be for any question\n")
       cat(paste("This data was generated on ", format(Sys.time(), "%a %b %d %H:%M:%S %Y"), "\n",sep=" "))
       cat("\nThe R packages used in the tools are listed next:\n")
