@@ -49,6 +49,8 @@ ui <- fluidPage(
       downloadButton("downloadSignature", label = "Download test signature"),
       tags$br(),
       tags$a(href="license.pdf", target="_blank", "usage licence"),
+      tags$br(),
+      tags$a(href="javascript:history.go(0)", tags$i("reset page content"), alt="Reset page"),
       tags$hr(),
       tipify(fileInput('file1', 'Choose RNASeq XLSX File', accept='.xlsx'),
              "the Data is a MS-Excel file provided by the Nucleomics Core, with worksheet#2 reporting gene expression (FPKM), you may produce a compatible file based on the test data provided here."),
