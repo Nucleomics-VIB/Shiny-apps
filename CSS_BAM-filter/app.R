@@ -19,10 +19,10 @@ library("ggpubr")
 
 # App defaults
 app.name <- "CCS_BAM-filter"
-version <- "Version: 1.0 - 2020-11-19"
-versnum <- "v1.0"
+version <- "Version: 1.0.1 - 2020-11-24"
+versnum <- "v1.0.1"
 
-# get uploads path from config file
+# load path to Uploads
 source("config.R")
 
 # you may un-comment the next line to allow 10MB input files
@@ -141,6 +141,7 @@ ui <- navbarPage(
                plotOutput('plots')
              )
            ), ),
+  tabPanel("Download filtered CSS Data"),
   navbarMenu(
     "Info",
     tabPanel("About",
@@ -418,17 +419,48 @@ server <- function(input, output) {
       ggtitle(paste0("read-count: ", nrow(pdata)))
   })
   
+  pt5 <- reactive({
+    if (is.null(filtered.data()))
+      return(NULL)
+    pdata <- filtered.data()
+    # get limits for plots
+    minl <- min(pdata$len)
+    maxl <- max(pdata$len)
+    n50reads <- Nvalue(50, pdata$len)
+    minpass <- min(pdata$npass)
+    maxpass <- max(pdata$npass)
+    n50npass <- Nvalue(50, pdata$npass)
+    minaccu <- min(c(0.999, min(pdata$Accuracy)))
+    maxaccu <- max(pdata$Accuracy)
+    medaccu <- median(pdata$Accuracy)
+    ggplot(data = pdata, aes(x = npass, y = len)) +
+      geom_point(pch = 20, cex = 0.75, col = "grey60") +
+      labs(x = "CCS pass number", y = "CCS length") +
+      stat_density_2d(aes(fill = ..level..), geom = "polygon") +
+      scale_fill_gradient(low = "blue", high = "red") +
+      theme_linedraw() +
+      theme(plot.title = element_text(margin = margin(b = 0), size = 14),
+            legend.position = "none") +
+      ggtitle("length vs CCS count")
+    })
+  
+  pt0 <- reactive({
+    if (is.null(filtered.data()))
+      return(NULL)
+    ggplot() + theme_void()
+  })
+  
   plotData <- reactive({
-    ptlist <- list(pt2(), pt1(), pt4(), pt3())
+    ptlist <- list(pt0(), pt2(), pt1(), pt5(), pt4(), pt3())
     grid.arrange(grobs = ptlist,
                  nrow = 2,
-                 ncol = 2)
+                 ncol = 3)
   })
   
   output$plots <- renderPlot({
     print(plotData())
   },
-  height = 800, width = 800)
+  height = 800, width = 1200)
   
   observeEvent(input$filterBam, {
     fbam <- gsub(".bam", "_filtered.bam", BamFile()$fname)
