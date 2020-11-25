@@ -26,7 +26,7 @@ versnum <- "v1.0.1"
 source("config.R")
 
 # you may un-comment the next line to allow 10MB input files
-options(shiny.maxRequestSize = 20 * 1024 ^ 2)
+options(shiny.maxRequestSize = 100 * 1024 ^ 2)
 
 textInput3 <- function (inputId, label, value = "", ...) {
   div(
