@@ -1,5 +1,5 @@
 # SequelLengthPlot.shinyapp
-# a Shiny web application that plaots density plot from a Zip archive of Sequel read length distributions created with bam2sizedist.sh
+# a Shiny web application that plots density plot from a Zip archive of Sequel read length distributions created with bam2sizedist.sh
 library("shiny")
 library("shinyBS")
 library("ggplot2")
