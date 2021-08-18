@@ -17,7 +17,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2heatmap"
-script.version <- "1.4.0"
+script.version <- "1.4.1"
 
 # maximum signature length
 maxlen <- 500
@@ -97,12 +97,12 @@ server <- function(input, output) {
 
   output$downloadData <- downloadHandler(
     filename <- function() { paste("expXXXX-RNAseqCounts", "xlsx", sep=".") },
-    content <- function(file) { file.copy("Data/expXXXX-RNAseqCounts.xlsx", file) }
+    content <- function(file) { file.copy("www/expXXXX-RNAseqCounts.xlsx", file) }
   )
 
   output$downloadSignature <- downloadHandler(
     filename <- function() { paste("test.signature", "txt", sep=".") },
-    content <- function(file) { file.copy("Data/test.signature.txt", file) }
+    content <- function(file) { file.copy("www/test.signature.txt", file) }
   )
 
   fpkm.data <- reactive({

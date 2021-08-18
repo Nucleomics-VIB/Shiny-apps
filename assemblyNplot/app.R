@@ -14,7 +14,7 @@ options(shiny.maxRequestSize=4*1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "assemblyNplot"
-script.version <- "1.0"
+script.version <- "1.1"
 
 # cleanup from previous uploads
 cleanup <- function () {
@@ -80,6 +80,9 @@ ui <- fluidPage(
   sidebarLayout(
     # show file import and molecule filters
     sidebarPanel(
+      tags$h5(paste(app.name, " version: ", script.version, sep="")),
+      downloadButton("downloadData", label = "Download test data"),
+      tags$br(),
        tipify(fileInput("upload", "Upload", accept = ".zip"), 
               "A zip files containing all fasta assemblies to plot"),
        br(),
@@ -100,11 +103,20 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
+  output$downloadData <- downloadHandler(
+    filename <- function() { "testData.zip" },
+    content <- function(file) { file.copy("www/testData.zip", file) }
+  )
+  
   fasta.files <- eventReactive({input$process}, {
-    unzip.files <- unzip(input$upload$datapath, list = FALSE)
+    # remove previous uploads
+    unlink("Data", recursive=TRUE)
+    # unzip user data
+    unzip.files <- unzip(input$upload$datapath, list = FALSE, exdir = "Data")
     # get rid of OSX hidden and empty stuff
     fasta.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
-    unlink("__MACOSX", recursive=TRUE)
+    unlink("Data/__MACOSX", recursive=TRUE)
+    # return fasta fiel list
     fasta.files
     })
   

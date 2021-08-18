@@ -13,7 +13,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "multiLengthPlot"
-script.version <- "1.3"
+script.version <- "1.4"
 
 # cleanup from previous uploads
 cleanup <- function () {
@@ -72,7 +72,10 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
+      tags$h5(paste(app.name, " version: ", script.version, sep="")),
       # show file import and length filters
+      downloadButton("downloadData", label = "Download test data"),
+      tags$br(),
       tipify(fileInput('upload', 'Upload', accept = c('.zip')), 
              "A zip files containing 1 or more length distributions to plot"),
       tipify(textInput('maxrec', 'max records per file', value=100000),
@@ -104,11 +107,20 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
+  output$downloadData <- downloadHandler(
+    filename <- function() { "testData.zip" },
+    content <- function(file) { file.copy("www/testData.zip", file) }
+  )
+  
   density.files <- eventReactive({input$process}, {
-    unzip.files <- unzip(input$upload$datapath, list = FALSE)
+    # remove previous uploads
+    unlink("Data", recursive=TRUE)
+    # unzip user data
+    unzip.files <- unzip(input$upload$datapath, list = FALSE, exdir = "Data")
     # get rid of OSX hidden and empty stuff
     density.files <- subset(unzip.files, !grepl("__MACOSX|.DS_Store|/$", unzip.files))
-    unlink("__MACOSX", recursive=TRUE)
+    unlink("Data/__MACOSX", recursive=TRUE)
+    # return file list
     density.files
   })
   
