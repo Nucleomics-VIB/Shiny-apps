@@ -62,12 +62,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   output$downloadData <- downloadHandler(
-    filename <- function() {
-      paste("sample", "zip", sep=".")
-    },
-    
+    filename <- function() { "RBioanalyzer_sample.zip" },
     content <- function(file) {
-      file.copy("Data/sample.zip", file)
+      file.copy("www/RBioanalyzer_sample.zip", file)
     },
     contentType = "application/zip"
   )
@@ -114,34 +111,34 @@ server <- function(input, output) {
                       text = list(c(input$file1$name, input$file2$name), col = c("grey", "blue")),
                       lines = list(type = c("l", "l"), col = c("grey", "blue"), lwd = 2))
       # plot ladder
-      a <- xyplot(Value ~ Time, ladder(), 
+      a <- lattice::xyplot(Value ~ Time, ladder(), 
                   panel = function(x,y, ...){
                     panel.xyplot(x,y, type = "l", lwd=0.1, col.line = 'white')
                     panel.polygon(x,y, alpha=0.25, ..., col='grey')
                   })
       
       # plot sample1
-      b <- xyplot(Value ~ Time, sample(), 
+      b <- lattice::xyplot(Value ~ Time, sample(), 
                   type = "l", lwd=2, col.line = "blue",
                   key=foo_key,
                   panel = function(x,y, ...){
                     panel.xyplot(x,y, ...)
                   })
       
-      b + as.layer(a)
+      b + latticeExtra::as.layer(a)
     } else {
       foo_key2 <- list(x = .97, y = .92, corner = c(1, 1),
                        text = list(c(input$file1$name, input$file2$name, input$file3$name), col = c("grey", "blue", "red")),
                        lines = list(type = c("l", "l", "l"), col = c("grey", "blue", "red"), lwd = 2))
       # plot ladder
-      a <- xyplot(Value ~ Time, ladder(), 
+      a <- lattice::xyplot(Value ~ Time, ladder(), 
                   panel = function(x,y, ...){
                     panel.xyplot(x,y, type = "l", lwd=0.1, col.line = 'white')
                     panel.polygon(x,y, alpha=0.25, ..., col='grey')
                   })
       
       # plot sample1
-      b <- xyplot(Value ~ Time, sample(), 
+      b <- lattice::xyplot(Value ~ Time, sample(), 
                   type = "l", lwd=2, col.line = "blue",
                   key=foo_key2,
                   panel = function(x,y, ...){
@@ -149,14 +146,14 @@ server <- function(input, output) {
                   })
       
       # plot sample2
-      c <- xyplot(Value ~ Time, sample2(), 
+      c <- lattice::xyplot(Value ~ Time, sample2(), 
                   type = "l", lwd=2, col.line = "red",
                   key = foo_key2,
                   panel = function(x,y, ...){
                     panel.xyplot(x,y, ...)
                   })
       
-      b + as.layer(c) + as.layer(a)
+      b + latticeExtra::as.layer(c) + latticeExtra::as.layer(a)
     }
   })
   
