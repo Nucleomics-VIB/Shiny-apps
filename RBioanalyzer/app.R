@@ -9,12 +9,9 @@
 library("shiny")
 library("readr")
 library("stringr")
-library("ggplot2")
 library("data.table")
 library("lattice")
 library("latticeExtra")
-#library("MESS"); # for AUC
-#library("pracma"); # for findpeaks
 
 # you may uncomment the next line to allow large input files
 options(shiny.maxRequestSize=1000*1024^2)
@@ -23,19 +20,6 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 script.version="1.1 (2021-09-03)"
-
-# custom functions
-## convert data.frame column types
-convert.magic <- function(obj, types){
-  for (i in 1:length(obj)){
-    FUN <- switch(types[i],
-                  character = as.character, 
-                  numeric = as.numeric, 
-                  factor = as.factor)
-    obj[,i] <- FUN(obj[,i])
-  }
-  obj
-}
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
