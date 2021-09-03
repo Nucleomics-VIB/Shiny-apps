@@ -22,7 +22,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
-script.version="1.0"
+script.version="1.1 (2021-09-03)"
 
 # custom functions
 ## convert data.frame column types
@@ -93,7 +93,8 @@ server <- function(input, output) {
     inFile1 <- input$file1
     if (is.null(inFile1)) return(NULL)
     ladder <- read_csv(inFile1$datapath, skip = 17)
-    data.ladder <- data.frame("Time"=ladder$Time, "Value"=ladder$Value)
+    ladder <- head(ladder, -1)
+    data.ladder <- data.frame("Time"=as.numeric(ladder$Time), "Value"=as.numeric(ladder$Value))
     data.ladder$Value[data.ladder$Value < 0] <- 0
     data.ladder
   })
@@ -103,7 +104,8 @@ server <- function(input, output) {
     inFile2 <- input$file2
     if (is.null(inFile2)) return(NULL)
     smpl <- read_csv(inFile2$datapath, skip = 17)
-    data.smpl <- data.frame("Time"=smpl$Time, "Value"=smpl$Value)
+    smpl <- head(smpl, -1)
+    data.smpl <- data.frame("Time"=as.numeric(smpl$Time), "Value"=as.numeric(smpl$Value))
     data.smpl$Value[data.smpl$Value < 0] <- 0
     data.smpl
   })
@@ -113,7 +115,8 @@ server <- function(input, output) {
     inFile3 <- input$file3
     if (is.null(inFile3)) return(NULL)
     smpl2 <- read_csv(inFile3$datapath, skip = 17)
-    data.smpl2 <- data.frame("Time"=smpl2$Time, "Value"=smpl2$Value)
+    smpl2 <- head(smpl2, -1)
+    data.smpl2 <- data.frame("Time"=as.numeric(smpl2$Time), "Value"=as.numeric(smpl2$Value))
     data.smpl2$Value[data.smpl2$Value < 0] <- 0
     data.smpl2
   })
