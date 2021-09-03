@@ -108,8 +108,8 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   output$downloadData <- downloadHandler(
-    filename <- function() { "testData.zip" },
-    content <- function(file) { file.copy("www/testData.zip", file) }
+    filename <- function() { "multiLengthplot_Data.zip" },
+    content <- function(file) { file.copy("www/multiLengthplot_Data.zip", file) }
   )
   
   density.files <- eventReactive({input$process}, {

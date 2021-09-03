@@ -104,8 +104,8 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   output$downloadData <- downloadHandler(
-    filename <- function() { "testData.zip" },
-    content <- function(file) { file.copy("www/testData.zip", file) }
+    filename <- function() { "assemblyNplot_data.zip" },
+    content <- function(file) { file.copy("www/assemblyNplot_data.zip", file) }
   )
   
   fasta.files <- eventReactive({input$process}, {
