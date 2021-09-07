@@ -89,7 +89,7 @@ server <- function(input, output) {
 
   output$downloadData <- downloadHandler(
     filename <- function() { paste("StatisticalResults", "xlsx", sep=".") },
-    content <- function(file) { file.copy("Data/StatisticalResults.xlsx", file) }
+    content <- function(file) { file.copy("www/StatisticalResults.xlsx", file) }
   )
 
   load.data <- reactive({
