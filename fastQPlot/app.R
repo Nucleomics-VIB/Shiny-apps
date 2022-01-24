@@ -1,7 +1,8 @@
 # FastQPlot.shinyapp
-# A R/shiny tool to filter fastQ data and make plot
+# A R/shiny tool to filter fastQ data and make plots
 # VIB Nucleomics Core (author: Stephane Plaisance)
 # 2020-12-08 v1.0
+# 2022-01-06 v1.1
 
 library("shiny")
 library("shinyBS")
@@ -15,14 +16,12 @@ library("ggplot2")
 library("grid")
 library("gridExtra")
 library("ggpubr")
+library("hexbin")
 
 # App defaults
 app.name <- "FastQPlot"
-version <- "Version: 1.0 - 2020-12-08"
-versnum <- "v1.0"
-
-# load path to Uploads
-source("config.R")
+version <- "Version: 1.1 - 2022-01-06"
+versnum <- "v1.1"
 
 # custom functions
 textInput3 <- function (inputId, label, value = "", ...) {
@@ -65,13 +64,13 @@ ui <- navbarPage(
            sidebarLayout(
              sidebarPanel(
                tags$h4(tags$i(
-                 "Analyze long read FastQ data (CCS or denovo assembly)"
+                 "Analyze long read FastQ data (ONT or PacBio reads or fastQ assembly)"
                )),
                tags$p(
-                 "The reads will be subjected to filtering accoring to your chosen limits and the resulting data used to create plots and reveal trends in your data."
+                 "The reads will be subjected to filtering according to your chosen limits and the resulting data used to create plots and reveal trends in your data."
                ),
                tags$p(
-                 "The filtered reads can be downloaded to your computer (FastQ format) and fed to downstream tools of your choice."
+                 "The filtered reads can be downloaded to your computer (compressed FastQ format) and fed to downstream tools of your choice."
                ),
                tags$p(
                  "Note: The size of the FastQ file should be less than 100Mb. For larger files, we recommend to install this shiny application (and its dependencies) on your own server from our GitHUB copy, see 'Info/About'."
@@ -182,11 +181,7 @@ ui <- navbarPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-  # clean old data
-  file.remove(file.path(uploads, "data.fq.gz"))
-  file.remove(file.path(uploads, "filtered_data.fq.gz"))
-  file.remove(file.path(uploads, "data.txt"))
-  file.remove(file.path(uploads, "filtered_data.txt"))
+
   fqdata <- ""
   
   # get user to select a FASTQ file to process
@@ -216,14 +211,27 @@ server <- function(input, output, session) {
   observeEvent(input$importFASTQ, {
     isolate(FASTQFile()$upath)
     upload_result <- list()
+    
+    # cleanup old files
+    err0 <- if (file.exists(file.path("Uploads", "data.fq.gz"))) {
+      file.remove(file.path("Uploads", "data.fq.gz"))
+    }
+    err1 <- if (file.exists(file.path("Uploads", "data.txt"))) {
+      file.remove(file.path("Uploads", "data.txt"))
+    }
+    err2 <- if (file.exists(file.path("Uploads", "filtered_data.fq.gz"))) {
+      file.remove(file.path("Uploads", "filtered_data.fq.gz"))
+    }
+    err3 <- if (file.exists(file.path("Uploads", "filtered_data.txt"))) {
+      file.remove(file.path("Uploads", "filtered_data.txt"))
+    }
+    
     # copy file to server
-    err0 <- file.copy(FASTQFile()$upath, uploads)
-    err1 <- file.remove(file.path(uploads, "data.fq.gz"))
-    err2 <- file.remove(file.path(uploads, "data.txt"))
-    err3 <-
-      file.rename(file.path(uploads, paste0("0.", FASTQFile()$fext)),
-                  file.path(uploads, "data.fq.gz"))
-    if (!err3) {
+    err4 <- file.copy(FASTQFile()$upath, "Uploads")
+    
+    err5 <- file.rename(file.path("Uploads", paste0("0.", FASTQFile()$fext)),
+                  file.path("Uploads", "data.fq.gz"))
+    if (!err5) {
       upload_result <- c(upload_result, "FAILED! Error during upload")
     }
     # all went well
@@ -321,6 +329,10 @@ server <- function(input, output, session) {
         GC <= as.numeric(input$maxGC)
     )
     
+    err <- if (file.exists(file.path("Uploads", "filtered_data.txt"))) {
+      file.remove(file.path("Uploads", "filtered_data.txt"))
+    }
+    
     # write to disk
     write.table(
       fdata,
@@ -379,7 +391,7 @@ server <- function(input, output, session) {
                              date()))
     row.names(info) <- c("file", "seqs", "date")
     tt <- ttheme_minimal(
-      base_size = 14,
+      base_size = 9,
       padding = unit(c(20, 6), "mm"),
       core = list(fg_params = list(hjust = 1, x = 0.9)),
       rowhead = list(fg_params = list(hjust = 1, x =
@@ -424,7 +436,7 @@ server <- function(input, output, session) {
         sep = ""
       )) +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14)) +
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12)) +
       ggtitle(
         paste0(
           "Read length ([",
@@ -461,7 +473,7 @@ server <- function(input, output, session) {
       xlim(gclims) +
       xlab("read GC%") +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14)) +
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12)) +
       ggtitle(paste0("Read GC% (N50=" , n50GC, ")"))
   })
   
@@ -489,7 +501,7 @@ server <- function(input, output, session) {
       xlab(paste("read mean basecall qualities (cut at ", qualims[2], ")", sep =
                    "")) +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14)) +
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12)) +
       ggtitle(
         paste0(
           "Read BaseCall quality ([",
@@ -533,7 +545,7 @@ server <- function(input, output, session) {
       xlim(lenlims) +
       ylim(gclims) +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14),
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12),
             legend.position = "none") +
       ggtitle("GC vs length")
   })
@@ -568,7 +580,7 @@ server <- function(input, output, session) {
       xlim(lenlims) +
       ylim(qualims) +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14),
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12),
             legend.position = "none") +
       ggtitle("avgQual vs length")
   })
@@ -603,7 +615,7 @@ server <- function(input, output, session) {
       xlim(qualims) +
       ylim(gclims) +
       theme_bw() +
-      theme(plot.title = element_text(margin = margin(b = 0), size = 14),
+      theme(plot.title = element_text(margin = margin(b = 0), size = 12),
             legend.position = "none") +
       ggtitle("GC vs avgQual")
   })
@@ -636,6 +648,12 @@ server <- function(input, output, session) {
     
     infq <- file.path("Uploads", "data.fq.gz")
     outfq <- file.path("Uploads", "filtered_data.fq.gz")
+
+    # delete existing version
+    err <- if (file.exists(file.path("Uploads", "filtered_data.fq.gz"))) {
+      file.remove(file.path("Uploads", "filtered_data.fq.gz"))
+    }
+    
     fres <- filterFastq(infq, outfq, filter = fun, compress = TRUE)
     
     fastq_filter_results <- list()
@@ -645,6 +663,7 @@ server <- function(input, output, session) {
       fastq_filter_results <-
         c(fastq_filter_results, "FAILED! filtering the FastQ data")
     }
+    
     # all went well
     if (length(fastq_filter_results) == 0) {
       fastq_filter_results <-
@@ -665,7 +684,7 @@ server <- function(input, output, session) {
   
   output$downloadFASTQ <- downloadHandler(
     filename = function() {
-      gsub(".fq.gz", "_filtered.fq.gz", FASTQFile()$fname)
+      gsub(".f(ast)?q.gz", "_filtered.fq.gz", FASTQFile()$fname)
     },
     content = function(file) {
       serverfile <- file.path("Uploads", "filtered_data.fq.gz")
@@ -675,7 +694,7 @@ server <- function(input, output, session) {
   
   output$downloadPlot <- downloadHandler(
     filename = function() {
-      gsub("fq.gz", input$format, FASTQFile()$fname)
+      gsub(".f(ast)?q.gz", paste0(".", input$format, sep=""), FASTQFile()$fname)
     },
     content = function(file) {
       ggsave(
