@@ -278,19 +278,16 @@ server <- function(input, output) {
   })
   
   # download Corr plot
-  output$downloadCorrPlot2 <- downloadHandler(
-    if (is.null(corrplot.data())) return(NULL),
-    filename = function() { 
-      paste0(input$outfile, "_Corr.png", sep='') 
-      },
+  output$downloadCorrPlot <- downloadHandler(
+    if (is.null(pcaplot.data())) return(NULL),
+    filename = function() { paste(input$outfile, "_Corr.png", sep='') },
     content = function(file) {
-      png(file)
-      print(corrplot.data())
-      null <- dev.off()
-      }
+      device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
+      ggsave(file, plot = pcaplot.data(), device = device)
+    }
   )
 
-  # prepare Corr plot
+  # prepare PCA plot
   pcaplot.data <- function(){
     if (is.null(filtered.data())) return(NULL)
     if (as.integer(input$pcax) == as.integer(input$pcay)) {
@@ -351,17 +348,14 @@ server <- function(input, output) {
   })
   
   # download PCA plot
-  output$downloadPCAPlot2 <- downloadHandler(
-      if (is.null(pcaplot.data())) return(NULL),
-      filename = function() { 
-        paste0(input$outfile, "_PCA.png", sep='') 
-      },
-      content = function(file) {
-        png(file)
-        print(pcaplot.data())
-        null <- dev.off()
-      }
-    )
+  output$downloadPCAPlot <- downloadHandler(
+    if (is.null(pcaplot.data())) return(NULL),
+    filename = function() { paste(input$outfile, "_PCA.png", sep='') },
+    content = function(file) {
+      device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
+      ggsave(file, plot = pcaplot.data(), device = device)
+    }
+  )
   
   # download M&M text
   output$downloadMM <- downloadHandler(
