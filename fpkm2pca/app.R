@@ -27,7 +27,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "fpkm2pca"
-script.version <- "1.0"
+script.version <- "1.0.1"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -279,11 +279,13 @@ server <- function(input, output) {
   
   # download Corr plot
   output$downloadCorrPlot <- downloadHandler(
-    if (is.null(pcaplot.data())) return(NULL),
+    if (is.null(corrplot.data())) return(NULL),
     filename = function() { paste(input$outfile, "_Corr.png", sep='') },
     content = function(file) {
-      device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
-      ggsave(file, plot = pcaplot.data(), device = device)
+      #device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
+      png(filename = file)
+      print(corrplot.data())
+      null <- dev.off()
     }
   )
 
@@ -352,8 +354,8 @@ server <- function(input, output) {
     if (is.null(pcaplot.data())) return(NULL),
     filename = function() { paste(input$outfile, "_PCA.png", sep='') },
     content = function(file) {
-      device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
-      ggsave(file, plot = pcaplot.data(), device = device)
+      #device <- function(..., width, height) grDevices::png(..., width = width, height = height, res = 300, units = "in")
+      ggsave(file, plot = pcaplot.data(), device = "png")
     }
   )
   
