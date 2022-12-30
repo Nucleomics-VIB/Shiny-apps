@@ -13,7 +13,7 @@ library(readr)
 library(marray)
 library(RColorBrewer)
 
-setwd("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/fpkm2pca/Data")
+setwd("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/counts2pca/Data")
 ExpNr <- "3949"
 RNAseqCounts <- read_excel("exp3949-RNAseqCounts.xlsx")
 sample.groups <- read_delim("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/fpkm2pca/Data/3949-sample-groups.txt", 

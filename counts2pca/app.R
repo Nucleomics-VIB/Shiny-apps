@@ -1,4 +1,4 @@
-# fpkm2pca.shinyapp
+# counts2pca.shinyapp
 # A R/shiny tool to create a correlation and PCA plot plots
 # from a Nucleomics Core MS-Excel RNASeq count file
 
@@ -9,10 +9,10 @@ library("shinyjs")
 library("shinyalert")
 library("openxlsx")
 #library("devtools")
-library("ggbiplot")
 # install_github("vqv/ggbiplot")
-#library("ggcorrplot")
+library("ggbiplot")
 # devtools::install_github("kassambara/ggcorrplot")
+#library("ggcorrplot")
 library("gplots")
 library("readr")
 library("marray")
@@ -26,8 +26,8 @@ options(shiny.maxRequestSize=1000*1024^2)
 # ref: https://stackoverflow.com/questions/31423144/how-to-know-if-the-app-is-running-at-local-or-on-server-r-shiny/31425801#31425801
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
-app.name <- "fpkm2pca"
-script.version <- "1.0.1"
+app.name <- "counts2pca"
+script.version <- "1.0b"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -42,7 +42,7 @@ ui <- fluidPage(
   
   # Application header
   headerPanel("Correlation and PCA plots
-              from RNASeq fpkm data"),
+              from RNASeq count data"),
   
   # Application title
   titlePanel(
@@ -64,7 +64,7 @@ ui <- fluidPage(
       tags$a(href="javascript:history.go(0)", tags$i("reset page content"), alt="Reset page"),
       tags$hr(),
       tipify(fileInput('file1', 'Choose RNASeq XLSX count File', accept='.xlsx'),
-             "the Data is a MS-Excel file provided by the Nucleomics Core, with worksheet#2 reporting gene expression (FPKM), you may produce a compatible file based on the test data provided here."),
+             "the Data is a MS-Excel file provided by the Nucleomics Core, with worksheet#1 reporting gene expression counts, you may produce a compatible file based on the test data provided here."),
       tipify(fileInput('file2', 'Choose Sample Group File', accept='.txt'),
              "the sample group file is a two-columns text files containing a column of sample names and a column with matching group names"),
       tags$hr(),
@@ -101,8 +101,9 @@ ui <- fluidPage(
                                  min = 1, max = 10,
                                  value = 3, step = 1,
                                  animate = TRUE),
-             "choose a font / label size"),
-      tipify(downloadButton('downloadMM', 'Download M&M'),"Download a text including the names and versions of all packages used in this webtool")
+                                 "choose a font / label size"),
+      tipify(downloadButton('downloadMM', 'Download M&M'),
+              "Download a text including the names and versions of all packages used in this webtool")
     ),
     
     # Show a plot of the generated distribution
@@ -113,21 +114,21 @@ ui <- fluidPage(
                            h3("RNASeq Data"),
                            h4("The results of your RNASeq sequencing typically include two main Excel files:"),
                            tags$div(tags$ul(
-                             tags$li("a count file returning raw and normalise gene counts (used here)"),
+                             tags$li("a count file returning raw (used here), and normalise gene counts"),
                              tags$li("a statistical analysis file returning pairwise differential expression values and statistics obtained after comparing sample groups."),
                            ), style = "font-size: 15px"),
                            p("If not provided by us, you will also need a tab-separated 'Sample Group file' with two columns"),
                            tags$div(tags$ul(
-                             tags$li("one containing the sample names (available as column names in the count file)"),
+                             tags$li("one containing the sample names (identical to the column names in the count file)"),
                              tags$li("the second containing the groups to which these samples belong."),
                            ), style = "font-size: 15px"),                           
                            h3("Variance analysis"),
                            p("One way to estimate the quality of your experiment is to confirm that your sample groups are mutually distinct at the level of gene expression."),
                            h4("We perform here such analysis using two methods:"),
-                           p("- plotting the Spearman-correlation values of all-versus-all sample comparisons based on the normalized counts (Correlation Plot)"),
-                           p("- plotting pairs of principal components (PCs) after computing a principal component analysis (PCA) of the normalized counts (PCA plot)"),
+                           p("- plotting the Spearman-correlation values of all-versus-all sample comparisons based on the raw counts (Correlation Plot)"),
+                           p("- plotting pairs of principal components (PCs) after computing a principal component analysis (PCA) of the raw counts (PCA plot)"),
                            h3("Interpretation"),
-                           p("If your experiment went well and your conditions induce differential expression of genes, you should see your samples grouped together by group in the heatmap and the groups clearly separated in the PCA plots."),
+                           p("If your experiment went well and your conditions induce differential expression of genes, you should see your samples grouped together by group in the correlation heatmap and the groups clearly separated in the PCA plots."),
                            p("If a sample is shown in a different group, this may be due to experimental errors (eg. sample swap) when the group are furthermore nicely distinct."),
                            p("Note: when drawn, the ellipse shows the 68% probability limit for each group."),
                            p("By contrast, overlapping PCA clouds may indicate that the conditions applied to the samples did not induce enough differential expression between groups to separate them based on variance."),
@@ -172,7 +173,7 @@ server <- function(input, output) {
   )
   
   # import user provided count data
-  fpkm.data <- reactive({
+  count.data <- reactive({
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     
@@ -181,26 +182,26 @@ server <- function(input, output) {
     
     # keep only data columns (remove last columns starting from "Chromosome")
     chromosome.col <- which(colnames(dat)==as.vector("Chromosome"))
-    fpkm.data <- dat[,c(3:(chromosome.col-1))]
+    count.data <- dat[,c(3:(chromosome.col-1))]
     
     # simplify sample names
-    colnames(fpkm.data) <- sapply(colnames(fpkm.data), function(strings){
+    colnames(count.data) <- sapply(colnames(count.data), function(strings){
       ind = unlist(gregexpr(pattern = "@", text = strings))
       if (length(ind) < 3){NA}
       else{substr(strings, 1, ind[length(ind) - 2] - 1)}
     })
     
     # kick useless part of names for samples
-    colnames(fpkm.data) <- sub("@", "_", colnames(fpkm.data))
+    colnames(count.data) <- sub("@", "_", colnames(count.data))
 
-    # return data as 'fpkm.data()'
-    fpkm.data
+    # return data as 'count.data()'
+    count.data
   })
   
   # show full data row count
   output$full.data.cnt <- reactive({
-    #if (is.null(fpkm.data())) return("Waiting for data!")
-    paste("Rows in the Full data: ", nrow(fpkm.data()))
+    #if (is.null(count.data())) return("Waiting for data!")
+    paste("Rows in the Full data: ", nrow(count.data()))
   })
   
   # import user provided sample group file
@@ -234,11 +235,11 @@ server <- function(input, output) {
   # process data  
   filtered.data <- eventReactive({input$goButton}, {
     # do nothing in absence of data
-    if (is.null(fpkm.data())) return(NULL)
+    if (is.null(count.data())) return(NULL)
     if (is.null(sample.groups())) return(NULL)
     
     # select only rows with variance
-    counts <- as.data.frame(fpkm.data())
+    counts <- as.data.frame(count.data())
     filtered.data <- counts[apply(counts, 1, var) != 0,]
     
     # return as filtered.data()
@@ -365,7 +366,7 @@ server <- function(input, output) {
     content = function(file) {
       sink(file, append=TRUE)
       cat(paste("Thanks for using our tool", app.name, script.version, "\n", sep=" "))
-      cat ("This tool generates a Heatmap after correlating samples based on their FPKM values and a PCA plot based on the same data.")
+      cat ("This tool generates a PCA plot based on the variance detected in row gene counts from multiple RNASeq samples.")
       cat("\nYou can contact The Nucleomics Core at nucleomics.bioinformatics@vib.be with your question\n")
       cat(paste("This data was generated on ", format(Sys.time(), "%a %b %d %H:%M:%S %Y"), "\n",sep=" "))
       cat("\nThe R packages used in the tools are listed next:\n")
