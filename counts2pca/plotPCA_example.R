@@ -13,10 +13,10 @@ library(readr)
 library(marray)
 library(RColorBrewer)
 
-setwd("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/counts2pca/Data")
-ExpNr <- "3949"
-RNAseqCounts <- read_excel("exp3949-RNAseqCounts.xlsx")
-sample.groups <- read_delim("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/fpkm2pca/Data/3949-sample-groups.txt", 
+setwd("~/Documents/GitHub/Nucleomics-VIB/Shiny-apps/counts2pca")
+ExpNr <- "1234"
+RNAseqCounts <- read_excel("Data/4110_ZPan_NovaSeq/exp4110-RNAseqCounts.xlsx", sheet = 1)
+sample.groups <- read_delim("Data/4110_ZPan_NovaSeq/4110-sample-groups.txt", 
                             show_col_types = FALSE,
                             delim = "\t", 
                             escape_double = FALSE, 

@@ -16,7 +16,7 @@ library("ggbiplot")
 library("gplots")
 library("readr")
 library("marray")
-library("RColorBrewer")        
+library("RColorBrewer")
 library("DT")
 #library("pheatmap")
 
