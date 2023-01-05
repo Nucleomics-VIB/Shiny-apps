@@ -19,6 +19,7 @@ library("marray")
 library("RColorBrewer")
 library("DT")
 #library("pheatmap")
+library("factoextra")
 
 # you may uncomment the next line to allow large input files
 options(shiny.maxRequestSize=1000*1024^2)
@@ -27,7 +28,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "counts2pca"
-script.version <- "1.0b"
+script.version <- "1.1b"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -42,7 +43,7 @@ ui <- fluidPage(
   
   # Application header
   headerPanel("Correlation and PCA plots
-              from RNASeq count data"),
+              from RNASeq raw count data"),
   
   # Application title
   titlePanel(
@@ -66,25 +67,36 @@ ui <- fluidPage(
       tipify(fileInput('file1', 'Choose RNASeq XLSX count File', accept='.xlsx'),
              "the Data is a MS-Excel file provided by the Nucleomics Core, with worksheet#1 reporting gene expression counts, you may produce a compatible file based on the test data provided here."),
       tipify(fileInput('file2', 'Choose Sample Group File', accept='.txt'),
-             "the sample group file is a two-columns text files containing a column of sample names and a column with matching group names"),
-      tags$hr(),
-      tags$h4("Edit settings and click: ", tags$em("Process & Plot")),
+             "the Sample Group file is a tab-separated text files with a header row (more info on the right)"),
+      tipify(numericInput("mincnt", 
+                          "min SUM(counts):", 
+                          1,
+                          min = 1, 
+                          max = 1000),
+             "require a minimum for the sum of all sample counts to keep a gene row"),
+      tags$h4("Edit settings above and click: ", tags$em("Process & Plot")),
       actionButton(inputId='goButton', "Process & Plot", style='padding:4px; font-weight: bold; font-size:150%'),
-      tags$br(),
       tags$hr(),
+      tags$h4("Plot file name"),
       textInput('outfile', "name prefix for output files:", value="plot"),
+      tags$h4("PCA settings (auto-refresh)"),
       tipify(radioButtons(inputId = "pcax", 
                           label = "Principal component for X:",
-                          choices = 1:4,
+                          choices = 1:6,
                           selected = "1",
                           inline = "TRUE"),
              "choose a principal componenty for the X-axis"),
       tipify(radioButtons(inputId = "pcay", 
                           label = "Principal component for Y:",
-                          choices = 1:4,
+                          choices = 1:6,
                           selected = "2",
                           inline = "TRUE"),
              "choose a principal componenty for the Y-axis"),
+      tipify(selectInput(inputId = "groups", 
+                         label = "Choose the grouping variable:",
+                         choices = c("group"),
+                         selected="group"),
+             "choose a sample grouping column"),
       tipify(radioButtons(inputId = "ellipse", 
                           label = "Draw ellipses:",
                           choices = c("Yes" = TRUE, "No" = FALSE),
@@ -115,34 +127,43 @@ ui <- fluidPage(
                            h4("The results of your RNASeq sequencing typically include two main Excel files:"),
                            tags$div(tags$ul(
                              tags$li("a count file returning raw (used here), and normalise gene counts"),
-                             tags$li("a statistical analysis file returning pairwise differential expression values and statistics obtained after comparing sample groups."),
+                             tags$li("a statistical analysis file returning pairwise differential expression values and statistics obtained after comparing sample groups (not used here)."),
                            ), style = "font-size: 15px"),
-                           p("If not provided by us, you will also need a tab-separated 'Sample Group file' with two columns"),
+                           p("If not provided by us, you will also need a tab-separated 'Sample Group' file with a header row and two or more columns"),
                            tags$div(tags$ul(
-                             tags$li("one containing the sample names (identical to the column names in the count file)"),
-                             tags$li("the second containing the groups to which these samples belong."),
+                             tags$li("the first column should be named 'labels' and contain the sample identifiers found as column names in the Excel file"),
+                             tags$li("the second column should be named 'groups' and link each sample to a user-defined group for ellipse plotting in the PCA"),
+                             tags$li("optionally: more metadata columns can be added to allow alternative grouping of the PCA results with ellipses"),
+                             tags$li("Note: if you want to omit samples from the analysis, simply omit the corresponding rows in the group file."),
                            ), style = "font-size: 15px"),                           
                            h3("Variance analysis"),
                            p("One way to estimate the quality of your experiment is to confirm that your sample groups are mutually distinct at the level of gene expression."),
                            h4("We perform here such analysis using two methods:"),
                            p("- plotting the Spearman-correlation values of all-versus-all sample comparisons based on the raw counts (Correlation Plot)"),
-                           p("- plotting pairs of principal components (PCs) after computing a principal component analysis (PCA) of the raw counts (PCA plot)"),
+                           p("- plotting pairs of principal components (PCs) after computing a principal component analysis (PCA) of the filtered* raw counts (PCA plot)"),
+                           p("(*) filtering removes rows with no variance and rows where the sum of all samples counts is less than the user provided minimum"),
                            h3("Interpretation"),
                            p("If your experiment went well and your conditions induce differential expression of genes, you should see your samples grouped together by group in the correlation heatmap and the groups clearly separated in the PCA plots."),
                            p("If a sample is shown in a different group, this may be due to experimental errors (eg. sample swap) when the group are furthermore nicely distinct."),
-                           p("Note: when drawn, the ellipse shows the 68% probability limit for each group."),
+                           p("Note: when drawn, the ellipse shows the 68% probability limit for each group (default value in the R  package)"),
                            p("By contrast, overlapping PCA clouds may indicate that the conditions applied to the samples did not induce enough differential expression between groups to separate them based on variance."),
                            br(),
-                           p("Please contact us at nucleomics.bioinformatics@vib.be for more information about how to interpret these plots or if you encounter problems using this tool."),
+                           p("Please contact us at 'nucleomics.bioinformatics@vib.be' for more information about how to interpret these plots or if you encounter problems using this tool."),
                            hr(),
                            textOutput('full.data.cnt'),
                            textOutput('filt.data.cnt'),
+                           textOutput('grouping.variable'),
+                           textOutput('grouping.values')
                   ),
                   tabPanel("Correlation Plot", 
                            plotOutput("corrplot", width = "80%", height = "600px"),
                            disabled(downloadButton('downloadCorrPlot', 'Download Plot'))
                   ),
-                  tabPanel("PCA Plot", 
+                  tabPanel("PCA Plot",
+                           br(),
+                           p("The first plot returns the % of variance explained by the first max=6 dimentions of the PCA"),
+                           plotOutput("pcavar", width = "50%", height = "250px"),
+                           p("The next plot returns a two-dimention plot based on the user choices"),
                            plotOutput("pcaplot", width = "80%", height = "600px"),
                            disabled(downloadButton('downloadPCAPlot', 'Download Plot'))
                   )
@@ -177,21 +198,29 @@ server <- function(input, output) {
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     
-    # load data from excel file
-    dat <- read.xlsx(inFile$datapath, sheet=2)
+    # load data from excel file (sheet#1 congtains raw counts)
+    # dat <- read.xlsx("exp4179-TPM-RNAseqCounts.xlsx", sheet=1)
+    dat <- read.xlsx(inFile$datapath, sheet=1)
     
     # keep only data columns (remove last columns starting from "Chromosome")
     chromosome.col <- which(colnames(dat)==as.vector("Chromosome"))
     count.data <- dat[,c(3:(chromosome.col-1))]
     
     # simplify sample names
+    # colnames(count.data) <- sapply(colnames(count.data), function(strings){
+    #   ind = unlist(gregexpr(pattern = "@", text = strings))
+    #   if (length(ind) < 3){NA}
+    #   else{substr(strings, 1, ind[length(ind) - 2] - 1)}
+    # })
+    
+    # keep only first string in long @-delimited names
     colnames(count.data) <- sapply(colnames(count.data), function(strings){
       ind = unlist(gregexpr(pattern = "@", text = strings))
       if (length(ind) < 3){NA}
-      else{substr(strings, 1, ind[length(ind) - 2] - 1)}
+      else{substr(strings, 1, ind[1]-1)}
     })
     
-    # kick useless part of names for samples
+    # remove leftover '@' symbols
     colnames(count.data) <- sub("@", "_", colnames(count.data))
 
     # return data as 'count.data()'
@@ -208,39 +237,76 @@ server <- function(input, output) {
   sample.groups <- reactive({
     inFile <- input$file2
     if (is.null(inFile)) return(NULL)
-    
+
+    # sample.groups <- read_delim("4179-sample-groups_del1.txt",
+    #                             delim = "\t",
+    #                             escape_double = FALSE,
+    #                             col_names = TRUE,
+    #                             trim_ws = TRUE,
+    #                             show_col_types = FALSE)
+
     sample.groups <- read_delim(inFile$datapath, 
                                 delim = "\t", 
                                 escape_double = FALSE, 
-                                col_names = FALSE, 
+                                col_names = TRUE, 
                                 trim_ws = TRUE,
                                 show_col_types = FALSE)
-    
-    colnames(sample.groups) <- c("labels", "group")
+
+    # check if table row contains the required 2 columns
+    if (! all(c("labels", "group") %in% colnames(sample.groups)) ) {
+      shinyalert("Oops!", "The group file should have a header row with at least two columns named 'labels' and 'group'", type = "error")
+      return(NULL)
+    }
     
     # simplify sample labels
+    # sample.groups$labels <- sapply(sample.groups$labels, function(strings){
+    #   ind = unlist(gregexpr(pattern = "@", text = strings))
+    #   if (length(ind) < 3){NA}
+    #   else{substr(strings, 1, ind[length(ind) - 2] - 1)}
+    # })
+    
+    # keep only first string in long @-delimited names
     sample.groups$labels <- sapply(sample.groups$labels, function(strings){
-      ind = unlist(gregexpr(pattern = "@", text = strings))
-      if (length(ind) < 3){NA}
-      else{substr(strings, 1, ind[length(ind) - 2] - 1)}
-    })
+         ind = unlist(gregexpr(pattern = "@", text = strings))
+         substr(strings, 1, ind[1]-1)
+       })
     
     # kick useless part of names for samples
     sample.groups$labels <- sub("@", "_", sample.groups$labels)
 
-    # return sample.groups()'
+    # update the dropdown in teh UI based on teh extra column names
+    items <- as.character(colnames(sample.groups)[-1])
+    updateSelectInput(session = getDefaultReactiveDomain(), 
+                      inputId = "groups", 
+                      choices = items, 
+                      selected = "group")
+    
+    # return sample.groups()
     sample.groups
   })
   
-  # process data  
+  # filter data  
   filtered.data <- eventReactive({input$goButton}, {
     # do nothing in absence of data
     if (is.null(count.data())) return(NULL)
     if (is.null(sample.groups())) return(NULL)
+
+    # create local data.frame for filtering
+    # counts <- as.data.frame(count.data)
+    counts <- as.data.frame(count.data())
+    
+    # keep only samples listed in the group file
+    # keep.cols <- sample.groups$labels
+    keep.cols <- sample.groups()$labels
+    filtered.data <- counts[,keep.cols]
     
     # select only rows with variance
-    counts <- as.data.frame(count.data())
-    filtered.data <- counts[apply(counts, 1, var) != 0,]
+    filtered.data <- filtered.data[apply(filtered.data, 1, var) != 0,]
+    
+    # keep only rows with sum >= input$mincnt
+    # keep.rows <- rowSums(filtered.data) >= 1 #input$mincnt
+    keep.rows <- rowSums(filtered.data) >= 1#input$mincnt
+    filtered.data <- filtered.data[keep.rows,]
     
     # return as filtered.data()
     filtered.data
@@ -252,10 +318,23 @@ server <- function(input, output) {
     paste("Rows in the filtered data: ", nrow(filtered.data()))
   })
   
+  # show selected grouping variable
+  output$grouping.variable <- reactive({
+    if (is.null(input$groups)) return("Waiting for data!")
+    paste("Current grouping column: ", input$groups)
+  })
+  
+  # show selected grouping variable
+  output$grouping.values <- reactive({
+    if (is.null(input$groups) || is.null(sample.groups())) return("Waiting for data!")
+    paste("Current grouping values: ", sample.groups()[input$groups])
+  })
+  
   # prepare Corr plot
   corrplot.data <- function(){
     if (is.null(filtered.data())) return(NULL)
     
+    # counts.cor <- cor(filtered.data, use="pairwise.complete.obs", method="spearman")
     counts.cor <- cor(filtered.data(), use="pairwise.complete.obs", method="spearman")
     # create palette with the marray package
     my.pal <- marray::maPalette(low="green", high="red", mid="yellow", k=69)
@@ -295,39 +374,73 @@ server <- function(input, output) {
     if (as.integer(input$pcax) == as.integer(input$pcay)) {
       shinyalert("Oops!", "PCX should be different of PCY", type = "error")
       return(NULL)
-      }
-    counts.pca <- prcomp(t(filtered.data()), scale. = TRUE)
-    pca.table <- as.data.frame(counts.pca$x[,1:4])
-    pca.table$labels <- rownames(pca.table)
-    # ggbiplot can only draw ellipses if there are at least 5 samples
-    drawEllipses <- ifelse(length(rownames(counts.pca$x)) > 4, input$ellipse, FALSE)
+    }
     
+    # compute PCA from filtered.data
+    # pca <- prcomp(t(filtered.data), scale. = TRUE)
+    pca <- prcomp(t(filtered.data()), scale. = TRUE)
+    
+    # find last dimension in PCA
+    dimlim <- ncol(pca$x)
+    dim.max <- min(c(dimlim,6))
+    
+    # adapt to dimension limit (eg when user asks for 6 and only 5 present)
+    pca.x <- min(c(dim.max, as.integer(input$pcax)))
+    pca.y <- min(c(dim.max, as.integer(input$pcay)))
+    
+    # fails and keeps updating => should probably be isolated
+    # adapt controls
+    # if (dim.max <6) {
+    #   updateRadioButtons(session = getDefaultReactiveDomain(), 
+    #                      inputId = "pcax",
+    #                      choices = 1:dim.max,
+    #                      selected = "1")
+    #   updateRadioButtons(session = getDefaultReactiveDomain(), 
+    #                      inputId = "pcay",
+    #                      choices = 1:dim.max,
+    #                      selected = "2"
+    #                      )
+    #   }
+    
+    # store in table for display
+    pca.table <- as.data.frame(pca$x[,1:dim.max])
+    pca.table$labels <- rownames(pca.table)
+    pca.table$group <- unlist(sample.groups()[input$groups])
+    
+    # define accompanying class for ellipse grouping
+    pca.class <- pca.table$group
+
+    # ggbiplot can only draw ellipses if there are at least 5 samples
+    drawEllipses <- ifelse(length(rownames(pca$x)) > 4, input$ellipse, FALSE)
+
     # create plot
     # show labels YES or NO from user choice
     if ( input$showlabel == "TRUE" ) {
-      g <- ggbiplot(counts.pca, 
-                  choices = c(as.integer(input$pcax), as.integer(input$pcay)), 
-                  obs.scale = 1, 
-                  var.scale = 1, 
-                  var.axes = F,
-                  groups = sample.groups()$group,
-                  ellipse = as.logical(drawEllipses), 
-                  ellipse.prob = 0.68,
-                  circle = TRUE,
-                  labels = sample.groups()$labels,
-                  labels.size = as.integer(input$size)
-                  )
-    } else {
-      g <- ggbiplot(counts.pca, 
-                    choices = c(as.integer(input$pcax), as.integer(input$pcay)), 
+      # show label to TRUE
+      g <- ggbiplot(pca, 
+                    choices = c(pca.x, pca.y), 
                     obs.scale = 1, 
                     var.scale = 1, 
                     var.axes = F,
-                    groups = sample.groups()$group,
+                    groups = pca.class,
+                    ellipse = as.logical(drawEllipses), 
+                    ellipse.prob = 0.68,
+                    circle = TRUE,
+                    labels = sample.groups()$labels,
+                    labels.size = as.integer(input$size)
+      )
+    } else {
+      # show label to FALSE
+      g <- ggbiplot(pca, 
+                    choices = c(pca.x, pca.y), 
+                    obs.scale = 1, 
+                    var.scale = 1, 
+                    var.axes = F,
+                    groups = pca.class,
                     ellipse = as.logical(drawEllipses), 
                     ellipse.prob = 0.68,
                     circle = TRUE
-      ) + geom_point(aes(colour=sample.groups()$group), size = as.integer(input$size))
+      ) + geom_point(aes(colour=pca.class), size = as.integer(input$size))
     }
     # tune plot format
     g <- g + scale_color_discrete(name = '')
@@ -336,25 +449,41 @@ server <- function(input, output) {
                    legend.text=element_text(size=as.integer(3*input$size)),
                    axis.title.x=element_text(size=3*input$size),
                    axis.title.y=element_text(size=3*input$size))
-    if (length(unique(pca.table$group))>7){
+    if (length(unique(pca.class))>7){
       g <- g + guides(col = guide_legend(ncol = 5, byrow = TRUE))
     }
-    g
+
+    # print variance explained to a second object
+    g2 <- fviz_eig(pca, ncp=6, main="% variance explained in the first 6 dimentions")
+
+    # return 2 plots in a list
+    return(
+      list(val1=g, val2=g2)
+    )
   }
   
   # show PCA plot on page
   output$pcaplot <- renderPlot({
     if (is.null(pcaplot.data())) return(NULL)
-    print(pcaplot.data())
+    .tmp <- pcaplot.data()
+    print(.tmp$val1)
     shinyjs::enable("downloadPCAPlot")
   })
-  
+
+  # show PCA var on page
+  output$pcavar <- renderPlot({
+    if (is.null(pcaplot.data())) return(NULL)
+    .tmp <- pcaplot.data()
+    print(.tmp$val2)
+  })
+    
   # download PCA plot
   output$downloadPCAPlot <- downloadHandler(
     if (is.null(pcaplot.data())) return(NULL),
     filename = function() { paste(input$outfile, "_PCA.png", sep='') },
     content = function(file) {
-      ggsave(file, plot = pcaplot.data(), device = "png")
+      .tmp <- pcaplot.data()
+      ggsave(file, plot = .tmp$val1, device = "png")
     }
   )
   

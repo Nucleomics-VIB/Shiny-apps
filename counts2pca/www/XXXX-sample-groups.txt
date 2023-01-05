@@ -1,10 +1,11 @@
-sample1@group1@bla@bla@bla	group1
-sample2@group1@bla@bla@bla	group1
-sample3@group1@bla@bla@bla	group1
-sample4@group1@bla@bla@bla	group1
-sample5@group1@bla@bla@bla	group1
-sample1@group2@bla@bla@bla	group2
-sample2@group2@bla@bla@bla	group2
-sample3@group2@bla@bla@bla	group2
-sample4@group2@bla@bla@bla	group2
-sample5@group2@bla@bla@bla	group2
+labels	group	stimul	time
+sample1@group1@bla@bla@bla	group1	cont	1h
+sample2@group1@bla@bla@bla	group1	drug	2h
+sample3@group1@bla@bla@bla	group1	cont	3h
+sample4@group1@bla@bla@bla	group1	drug	1h
+sample5@group1@bla@bla@bla	group1	cont	2h
+sample6@group2@bla@bla@bla	group2	drug	3h
+sample7@group2@bla@bla@bla	group2	cont	1h
+sample8@group2@bla@bla@bla	group2	drug	2h
+sample9@group2@bla@bla@bla	group2	cont	3h
+sample10@group2@bla@bla@bla	group2	drug	1h
