@@ -28,7 +28,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "counts2pca"
-script.version <- "1.1b"
+script.version <- "1.2b"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
