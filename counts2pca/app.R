@@ -1,6 +1,7 @@
 # counts2pca.shinyapp
 # A R/shiny tool to create a correlation and PCA plot plots
 # from a Nucleomics Core MS-Excel RNASeq count file
+# SP@NC, 2023-01-06
 
 library("shiny")
 library("shinyBS")
@@ -9,7 +10,7 @@ library("shinyjs")
 library("shinyalert")
 library("openxlsx")
 #library("devtools")
-# install_github("vqv/ggbiplot")
+# devtools::install_github("vqv/ggbiplot")
 library("ggbiplot")
 # devtools::install_github("kassambara/ggcorrplot")
 #library("ggcorrplot")
@@ -28,7 +29,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "counts2pca"
-script.version <- "1.2b"
+script.version <- "1.3b"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -124,7 +125,7 @@ ui <- fluidPage(
       tabsetPanel(type = "tabs",
                   tabPanel("Info", 
                            h3("RNASeq Data"),
-                           h4("The results of your RNASeq sequencing typically include two main Excel files:"),
+                           h4("the results of your RNASeq sequencing typically include two main Excel files:"),
                            tags$div(tags$ul(
                              tags$li("a count file returning raw (used here), and normalise gene counts"),
                              tags$li("a statistical analysis file returning pairwise differential expression values and statistics obtained after comparing sample groups (not used here)."),
@@ -161,9 +162,10 @@ ui <- fluidPage(
                   ),
                   tabPanel("PCA Plot",
                            br(),
-                           p("The first plot returns the % of variance explained by the first max=6 dimentions of the PCA"),
+                           p("the first plot returns the % of variance explained by the first max=6 dimensions of the PCA"),
                            plotOutput("pcavar", width = "50%", height = "250px"),
-                           p("The next plot returns a two-dimention plot based on the user choices"),
+                           disabled(downloadButton('downloadPCAVar', 'Download Plot')),
+                           p("the next plot returns a two-dimension plot based on the user choices"),
                            plotOutput("pcaplot", width = "80%", height = "600px"),
                            disabled(downloadButton('downloadPCAPlot', 'Download Plot'))
                   )
@@ -198,8 +200,8 @@ server <- function(input, output) {
     inFile <- input$file1
     if (is.null(inFile)) return(NULL)
     
-    # load data from excel file (sheet#1 congtains raw counts)
-    # dat <- read.xlsx("exp4179-TPM-RNAseqCounts.xlsx", sheet=1)
+    # load data from excel file (sheet#1 contains raw counts)
+    # dat <- read.xlsx("expXXXX-RNAseqCounts.xlsx", sheet=1)
     dat <- read.xlsx(inFile$datapath, sheet=1)
     
     # keep only data columns (remove last columns starting from "Chromosome")
@@ -238,13 +240,13 @@ server <- function(input, output) {
     inFile <- input$file2
     if (is.null(inFile)) return(NULL)
 
-    # sample.groups <- read_delim("4179-sample-groups_del1.txt",
+    # sample.groups <- read_delim("XXXX-sample-groups.txt",
     #                             delim = "\t",
     #                             escape_double = FALSE,
     #                             col_names = TRUE,
     #                             trim_ws = TRUE,
     #                             show_col_types = FALSE)
-
+    
     sample.groups <- read_delim(inFile$datapath, 
                                 delim = "\t", 
                                 escape_double = FALSE, 
@@ -254,7 +256,7 @@ server <- function(input, output) {
 
     # check if table row contains the required 2 columns
     if (! all(c("labels", "group") %in% colnames(sample.groups)) ) {
-      shinyalert("Oops!", "The group file should have a header row with at least two columns named 'labels' and 'group'", type = "error")
+      shinyalert("Oops!", "the group file should have a header row with at least two columns named 'labels' and 'group'", type = "error")
       return(NULL)
     }
     
@@ -274,7 +276,7 @@ server <- function(input, output) {
     # kick useless part of names for samples
     sample.groups$labels <- sub("@", "_", sample.groups$labels)
 
-    # update the dropdown in teh UI based on teh extra column names
+    # update the dropdown in the UI based on the extra column names
     items <- as.character(colnames(sample.groups)[-1])
     updateSelectInput(session = getDefaultReactiveDomain(), 
                       inputId = "groups", 
@@ -292,11 +294,9 @@ server <- function(input, output) {
     if (is.null(sample.groups())) return(NULL)
 
     # create local data.frame for filtering
-    # counts <- as.data.frame(count.data)
     counts <- as.data.frame(count.data())
     
     # keep only samples listed in the group file
-    # keep.cols <- sample.groups$labels
     keep.cols <- sample.groups()$labels
     filtered.data <- counts[,keep.cols]
     
@@ -304,8 +304,7 @@ server <- function(input, output) {
     filtered.data <- filtered.data[apply(filtered.data, 1, var) != 0,]
     
     # keep only rows with sum >= input$mincnt
-    # keep.rows <- rowSums(filtered.data) >= 1 #input$mincnt
-    keep.rows <- rowSums(filtered.data) >= 1#input$mincnt
+    keep.rows <- rowSums(filtered.data) >= input$mincnt
     filtered.data <- filtered.data[keep.rows,]
     
     # return as filtered.data()
@@ -334,7 +333,6 @@ server <- function(input, output) {
   corrplot.data <- function(){
     if (is.null(filtered.data())) return(NULL)
     
-    # counts.cor <- cor(filtered.data, use="pairwise.complete.obs", method="spearman")
     counts.cor <- cor(filtered.data(), use="pairwise.complete.obs", method="spearman")
     # create palette with the marray package
     my.pal <- marray::maPalette(low="green", high="red", mid="yellow", k=69)
@@ -352,7 +350,8 @@ server <- function(input, output) {
   # show Corr plot on page
   output$corrplot <- renderPlot({
     if (is.null(corrplot.data())) return(NULL)
-    par(mar=c(7,4,4,2)+0.1)
+    # par(mar=c(7,4,4,2)+0.1)
+    pdf(file = NULL)
     print(corrplot.data())
     shinyjs::enable("downloadCorrPlot")
   })
@@ -362,6 +361,7 @@ server <- function(input, output) {
     if (is.null(corrplot.data())) return(NULL),
     filename = function() { paste(input$outfile, "_Corr.png", sep='') },
     content = function(file) {
+      par(mar=c(7,4,4,2)+0.1)
       png(filename = file)
       print(corrplot.data())
       null <- dev.off()
@@ -377,31 +377,30 @@ server <- function(input, output) {
     }
     
     # compute PCA from filtered.data
-    # pca <- prcomp(t(filtered.data), scale. = TRUE)
     pca <- prcomp(t(filtered.data()), scale. = TRUE)
     
     # find last dimension in PCA
     dimlim <- ncol(pca$x)
     dim.max <- min(c(dimlim,6))
+
+    # read current values
+    pca.x <- as.integer(input$pcax)
+    pca.y <- as.integer(input$pcay)
     
-    # adapt to dimension limit (eg when user asks for 6 and only 5 present)
-    pca.x <- min(c(dim.max, as.integer(input$pcax)))
-    pca.y <- min(c(dim.max, as.integer(input$pcay)))
-    
-    # fails and keeps updating => should probably be isolated
-    # adapt controls
-    # if (dim.max <6) {
-    #   updateRadioButtons(session = getDefaultReactiveDomain(), 
-    #                      inputId = "pcax",
-    #                      choices = 1:dim.max,
-    #                      selected = "1")
-    #   updateRadioButtons(session = getDefaultReactiveDomain(), 
-    #                      inputId = "pcay",
-    #                      choices = 1:dim.max,
-    #                      selected = "2"
-    #                      )
-    #   }
-    
+    # adapt controls when PCA has less than 6 dimensions
+    updateRadioButtons(session = getDefaultReactiveDomain(),
+                         inputId = "pcax",
+                         choices = 1:dim.max,
+                         selected = pca.x,
+                         inline = "TRUE"
+                       )
+    updateRadioButtons(session = getDefaultReactiveDomain(),
+                         inputId = "pcay",
+                         choices = 1:dim.max,
+                         selected = pca.y,
+                         inline = "TRUE"
+                       )
+
     # store in table for display
     pca.table <- as.data.frame(pca$x[,1:dim.max])
     pca.table$labels <- rownames(pca.table)
@@ -417,6 +416,7 @@ server <- function(input, output) {
     # show labels YES or NO from user choice
     if ( input$showlabel == "TRUE" ) {
       # show label to TRUE
+      
       g <- ggbiplot(pca, 
                     choices = c(pca.x, pca.y), 
                     obs.scale = 1, 
@@ -454,11 +454,14 @@ server <- function(input, output) {
     }
 
     # print variance explained to a second object
-    g2 <- fviz_eig(pca, ncp=6, main="% variance explained in the first 6 dimentions")
+    g2 <- fviz_eig(pca, 
+                   ncp=6, 
+                   main="% variance explained in the first 6 dimensions"
+                   )
 
     # return 2 plots in a list
     return(
-      list(val1=g, val2=g2)
+      list(plot1=g, plot2=g2)
     )
   }
   
@@ -466,7 +469,7 @@ server <- function(input, output) {
   output$pcaplot <- renderPlot({
     if (is.null(pcaplot.data())) return(NULL)
     .tmp <- pcaplot.data()
-    print(.tmp$val1)
+    print(.tmp$plot1)
     shinyjs::enable("downloadPCAPlot")
   })
 
@@ -474,7 +477,8 @@ server <- function(input, output) {
   output$pcavar <- renderPlot({
     if (is.null(pcaplot.data())) return(NULL)
     .tmp <- pcaplot.data()
-    print(.tmp$val2)
+    print(.tmp$plot2)
+    shinyjs::enable("downloadPCAVar")
   })
     
   # download PCA plot
@@ -483,7 +487,27 @@ server <- function(input, output) {
     filename = function() { paste(input$outfile, "_PCA.png", sep='') },
     content = function(file) {
       .tmp <- pcaplot.data()
-      ggsave(file, plot = .tmp$val1, device = "png")
+      ggsave(file, 
+             plot = .tmp$plot1, 
+             device = "png", 
+             width=16, 
+             height=16, 
+             unit="cm")
+    }
+  )
+  
+  # download PCA var
+  output$downloadPCAVar <- downloadHandler(
+    if (is.null(pcaplot.data())) return(NULL),
+    filename = function() { paste(input$outfile, "_PCAvariance.png", sep='') },
+    content = function(file) {
+      .tmp <- pcaplot.data()
+      ggsave(file, 
+             plot = .tmp$plot2, 
+             device = "png", 
+             width=16, 
+             height=8, 
+             unit="cm")
     }
   )
   
@@ -496,9 +520,9 @@ server <- function(input, output) {
       sink(file, append=TRUE)
       cat(paste("Thanks for using our tool", app.name, script.version, "\n", sep=" "))
       cat ("This tool generates a PCA plot based on the variance detected in row gene counts from multiple RNASeq samples.")
-      cat("\nYou can contact The Nucleomics Core at nucleomics.bioinformatics@vib.be with your question\n")
+      cat("\nYou can contact the Nucleomics Core at nucleomics.bioinformatics@vib.be with your question\n")
       cat(paste("This data was generated on ", format(Sys.time(), "%a %b %d %H:%M:%S %Y"), "\n",sep=" "))
-      cat("\nThe R packages used in the tools are listed next:\n")
+      cat("\nthe R packages used in the tools are listed next:\n")
       print(capture.output(sessionInfo()))
       sink()
     }
