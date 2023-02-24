@@ -29,7 +29,7 @@ options(shiny.maxRequestSize=1000*1024^2)
 #if ( Sys.getenv('SHINY_PORT') == "" ) { options(shiny.maxRequestSize=1000*1024^2) }
 
 app.name <- "counts2pca"
-script.version <- "1.3b"
+script.version <- "1.4"
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -98,6 +98,18 @@ ui <- fluidPage(
                          choices = c("group"),
                          selected="group"),
              "choose a sample grouping column"),
+      tipify(radioButtons(inputId = "centerdata", 
+                          label = "Center data:",
+                          choices = c("Yes" = TRUE, "No" = FALSE),
+                          selected = TRUE,
+                          inline = "TRUE"),
+             "Mean-center the data prior to PCA?"),
+      tipify(radioButtons(inputId = "scaledata", 
+                          label = "Scale data:",
+                          choices = c("Yes" = TRUE, "No" = FALSE),
+                          selected = TRUE,
+                          inline = "TRUE"),
+             "Scale the data prior to PCA?"),
       tipify(radioButtons(inputId = "ellipse", 
                           label = "Draw ellipses:",
                           choices = c("Yes" = TRUE, "No" = FALSE),
@@ -377,7 +389,12 @@ server <- function(input, output) {
     }
     
     # compute PCA from filtered.data
-    pca <- prcomp(t(filtered.data()), scale. = TRUE)
+    pcadat <- t(filtered.data())
+      
+    # scale and center based on user choices
+    pca <- prcomp(pcadat,
+                  center = as.logical(input$centerdata),
+                  scale. = as.logical(input$scaledata))
     
     # find last dimension in PCA
     dimlim <- ncol(pca$x)
