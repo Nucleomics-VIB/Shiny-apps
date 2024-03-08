@@ -15,6 +15,7 @@ library("ggbiplot")
 # devtools::install_github("kassambara/ggcorrplot")
 #library("ggcorrplot")
 library("gplots")
+library("ggrepel")
 library("readr")
 library("marray")
 library("RColorBrewer")
@@ -124,7 +125,7 @@ ui <- fluidPage(
              "whether to show sample labels next to the points"),
       tipify(sliderInput("size", "label size:",
                                  min = 1, max = 10,
-                                 value = 3, step = 1,
+                                 value = 5, step = 1,
                                  animate = TRUE),
                                  "choose a font / label size"),
       tipify(downloadButton('downloadMM', 'Download M&M'),
@@ -442,10 +443,19 @@ server <- function(input, output) {
                     groups = pca.class,
                     ellipse = as.logical(drawEllipses), 
                     ellipse.prob = 0.68,
-                    circle = TRUE,
-                    labels = sample.groups()$labels,
-                    labels.size = as.integer(input$size)
-      )
+                    circle = TRUE #,
+                    #labels = sample.groups()$labels,
+                    #labels.size = as.integer(input$size)
+      ) + geom_point(aes(colour=pca.class), size = as.integer(input$size))
+      # add labels with grepel
+      nudgex <- 1
+      nudgey <- 1
+      g <- g + geom_text_repel(aes(label = sample.groups()$labels), 
+                               size = as.integer(input$size), 
+                               max.overlaps=10, 
+                               nudge_x=nudgex, 
+                               nudge_y=nudgey,
+                               segment.colour = NA)
     } else {
       # show label to FALSE
       g <- ggbiplot(pca, 
