@@ -30,7 +30,8 @@ ui <- fluidPage(
         tabPanel("Summary Table", 
                  DTOutput("summaryTable"),  # No options here
                  plotOutput("stopCycleHistogram"),  # Existing histogram plot
-                 plotOutput("fluoC25Histogram")),  # New histogram for fluo.c25
+                 plotOutput("fluoC25Histogram"),  # New histogram for fluo.c25
+                 plotOutput("endpointfluoHistogram")), # New histogram for endpoint.fluo
         tabPanel("Fluorescence Table", DTOutput("fluoTable"))
         #tabPanel("Raw Data Table", DTOutput("rawDataTable"))
       )
@@ -171,14 +172,33 @@ server <- function(input, output) {
     binsize <- input$binsize
     
     ggplot(data()$summary_table, aes(x = fluo.c25)) +
-      geom_histogram(binwidth = binsize, fill="green", color="black") + 
+      geom_histogram(binwidth = binsize, fill="red", color="black") + 
       scale_x_continuous(breaks=seq(min(data()$summary_table$fluo.c25), max(data()$summary_table$fluo.c25), by=binsize)) +
       labs(title = "Distribution of Fluorescence at c=25",
            x = "Fluorescence (c=25)",
            y = "Frequency") +
-      theme(axis.text.x=element_text(size=12), angle=45, hjust=1) +   # Rotate x-axis text to 45 degrees and increase size
-      theme(axis.text.y=element_text(size=12))   # Increase y-axis text size if needed
+      theme(axis.text.x=element_text(size=12, angle=45, hjust=1),   # Rotate x-axis text to 45 degrees and increase size
+            axis.text.y=element_text(size=12))   # Increase y-axis text size if needed
   })
+  
+  # Render histogram of Endpoint.fluo values on the Summary Table page
+  output$endpointfluoHistogram <- renderPlot({
+    req(data())
+    
+    binsize <- input$binsize
+    
+    # Create the ggplot object
+    ggplot(data()$summary_table, aes(x = Endpoint.fluo)) +
+      geom_histogram(binwidth = binsize, fill="green", color="black") + 
+      scale_x_continuous(breaks=seq(min(data()$summary_table$Endpoint.fluo), max(data()$summary_table$Endpoint.fluo), by=binsize)) +
+      labs(title = "Distribution of END point Fluorescence",
+           x = "END point Fluorescence",
+           y = "Frequency") +
+      theme(axis.text.x=element_text(size=12, angle=45, hjust=1),  # Rotate x-axis text to 45 degrees and increase size
+            axis.text.y=element_text(size=12))   # Increase y-axis text size if needed
+
+  })
+  
 }
 
 # Run the application 
