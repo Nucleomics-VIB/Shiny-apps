@@ -1,3 +1,11 @@
+# Plot_n6_data.shinyapp
+# A R/shiny tool to plot from n6tech exported text files
+#
+# Stephane Plaisance, VIB Nucleomics Core (nucleomics@vib.be)
+# visit our Git: https://github.com/Nucleomics-VIB 
+# version: 2024-11-29_v1.3
+# © by using this tool, you accept the licence saved under ./www/licence.pdf
+
 library(shiny)
 library(readxl)
 library(ggplot2)
