@@ -6,6 +6,7 @@
 # version: 2024-11-29_v1.3
 # © by using this tool, you accept the licence saved under ./www/licence.pdf
 
+# Load necessary packages
 library(shiny)
 library(readxl)
 library(ggplot2)
@@ -16,11 +17,18 @@ library(plotly)
 
 # Define UI for the app
 ui <- fluidPage(
-  titlePanel("n6tech Raw Data Analysis"),
+  headerPanel("n6tech Raw Data Analysis"),
   windowTitle = "n6tech Raw Data Analysis",
-  tags$a(href = "https://nucleomicscore.sites.vib.be/en", target = "_blank",
-         img(src = "NC_logo_full.png", align = "right", width = "150", height = "58.5", alt = "VIB Nucleomics Core")),
-  h5("nucleomics@vib.be | Version: 1.3 | 2024-11-29"),
+  tags$a(href="https://nucleomicscore.sites.vib.be/en", 
+         target="_blank",
+         img(src="NC_logo_full.png", 
+             align = "right", 
+             width="150", 
+             height="58.5", 
+             alt="VIB Nucleomics Core"),
+         h5("nucleomics@vib.be | Version: 1.2 | ", "2024-11-27")
+  ), # format(Sys.Date(), "%B %d, %Y"),
+  tags$a(href="license.pdf", target="_blank", "usage licence"),
   sidebarLayout(
     sidebarPanel(
       fileInput("labels", "Upload Excel Labels", accept = c(".xlsx")),
