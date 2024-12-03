@@ -3,12 +3,11 @@
 #
 # Stephane Plaisance, VIB Nucleomics Core (nucleomics@vib.be)
 # visit our Git: https://github.com/Nucleomics-VIB 
-# version: 2024-11-29_v1.3
+# version: 2024-11-29_v1.4; using real csv data from Yann
 # © by using this tool, you accept the licence saved under ./www/licence.pdf
 
 # Load necessary packages
 library(shiny)
-library(readxl)
 library(ggplot2)
 library(reshape2)
 library(DT)
@@ -26,13 +25,19 @@ ui <- fluidPage(
              width="150", 
              height="58.5", 
              alt="VIB Nucleomics Core"),
-         h5("nucleomics@vib.be | Version: 1.2 | ", "2024-11-27")
+         h5("nucleomics@vib.be | Version: 1.4 | ", "2024-12-03")
   ), # format(Sys.Date(), "%B %d, %Y"),
   tags$a(href="license.pdf", target="_blank", "usage licence"),
   sidebarLayout(
     sidebarPanel(
-      fileInput("labels", "Upload Excel Labels", accept = c(".xlsx")),
-      fileInput("data", "Upload Excel Data", accept = c(".xlsx")),
+      fileInput("labels", "Choose CSV label File",
+                accept = c("text/csv",
+                           "text/comma-separated-values,text/plain",
+                           ".csv")),
+      fileInput("data", "Choose CSV n6.Data File",
+                accept = c("text/csv",
+                           "text/comma-separated-values,text/plain",
+                           ".csv")),
       textInput("threshold", "Enter Fluorescence Threshold", value = "8000"),
       radioButtons("mean_median", "Choose Statistic for Color Scale:", 
                    choices = c("Median" = "median", "Mean" = "mean"), 
@@ -40,7 +45,7 @@ ui <- fluidPage(
       numericInput("cycle_number", "Focus Cycle Number:", value = 20, min = 1, max = 35),
       radioButtons("mouseOverlay", "Mouse Overlay", choices = c("Well", "Label")),
       checkboxInput("showLegend", "Show Legend", value = FALSE),
-      sliderInput("binsize", "Binsize for fluo summary plots:", min = 100, max = 1000, value = 500, step = 100),
+      sliderInput("binsize", "Binsize for fluo summary plots:", min = 100, max = 1000, value = 500, step = 50),
       downloadButton("downloadData", "Download Test Data"),
       width = 3
     ),
@@ -88,7 +93,22 @@ ui <- fluidPage(
 
 # Define server logic for the app
 server <- function(input, output, session) {
-
+  
+  # replace NA by last measure in previous cycle 
+  replace_na_with_last_non_na <- function(matched_row, original_df) {
+    for (col in names(matched_row)) {
+      if (col != "Cycle" && is.na(matched_row[[col]])) {
+        # Find the last non-NA value in the column up to the current row
+        last_non_na <- tail(original_df[[col]][!is.na(original_df[[col]]) & original_df$Cycle <= matched_row$Cycle], 1)
+        if (length(last_non_na) == 0) {
+          last_non_na <- NA
+        }
+        matched_row[[col]] <- last_non_na
+      }
+    }
+    return(matched_row)
+  }
+  
   # Download handler for the zip file
   output$downloadData <- downloadHandler(
     filename = function() {
@@ -109,11 +129,19 @@ server <- function(input, output, session) {
   sample_info <- reactive({
     req(input$labels)  # Ensure a file is uploaded
     labelsfile <- input$labels$datapath  # Get file path
-    sample_info <- read_excel(labelsfile, col_names = TRUE)  # Read Excel file
+
+    # Read the CSV file and replace empty cells with NA
+    sample_info <- read.csv(labelsfile, na.strings = c("", "NA"))
 
     if (nrow(sample_info) < 5) {
       return(NULL)  # Return NULL if there isn't enough data
     }
+    
+    # Add an index column for sorting
+    sample_info$index <- as.integer(1:nrow(sample_info))
+
+    # move the index as column 1
+    sample_info<- sample_info[, c(ncol(sample_info), 1:(ncol(sample_info)-1))]
     
     # return sample_info()
     sample_info
@@ -122,16 +150,20 @@ server <- function(input, output, session) {
   # Reactive expression to read and process the uploaded Excel n6 data file
   n6data <- reactive({
     req(input$data)  # Ensure a data file was uploaded
-
     datafile <- input$data$datapath  # Get file path
-    n6data <- read_excel(datafile, col_names = TRUE)  # Read Excel file
+    
+    # Read the CSV file and replace empty cells with NA
+    n6data <- read.csv(datafile, na.strings = c("", "NA"))
+
+    # Add the Cycle column
+    n6data$Cycle <- as.integer(1:nrow(n6data))
+    
+    # Move the new Cycle column to the first position and remove the former TimeStamp column
+    n6data <- n6data[, c(ncol(n6data), 2:(ncol(n6data)-1))]
     
     if (nrow(n6data) < 5) {
       return(NULL)  # Return NULL if there isn't enough data
     }
-    
-    # Fill NA values with the last observation carried forward
-    #n6data <- na.locf(n6data, na.rm = FALSE)
     
     # return to n6data()
     n6data
@@ -140,7 +172,7 @@ server <- function(input, output, session) {
   # dynamically limit the cycle_index value based on the uploaded data
   max_cycle <- reactive({
     req(n6data())
-    nrow(n6data())-2
+    nrow(n6data())
   })
   
   observe({
@@ -158,17 +190,8 @@ server <- function(input, output, session) {
     req(sample_info(), n6data(), input$cycle_number)
     
     # copy external objects
-    n6data <- n6data()
+    fluo_table <- n6data()
     sample_info <- sample_info()
-    
-    # split n6data into fluo_data and summary_data  
-    
-    ###################################################
-    # remove last two rows of raw data to get fluo_data
-    fluo_table <- n6data[-c((nrow(n6data)-1):(nrow(n6data))),]
-    
-    ## Convert Fluorescence values to integer before reshaping
-    fluo_table <- as.data.frame(lapply(fluo_table, function(x) as.integer(as.numeric(as.character(x)))))
     
     ## Reshape fluo_table into long format
     fluo_long <- melt(fluo_table, id.vars = "Cycle", variable.name = "Well", value.name = "Fluorescence")
@@ -176,28 +199,44 @@ server <- function(input, output, session) {
     # add labels from sample_info
     fluo_long <- merge(fluo_long, sample_info[, c("Well", "Label")], by = "Well", all.x = TRUE)
     
-    ########################################################
-    # Create summary_table from the last two rows of n6data
-    summary_table <- rbind(colnames(n6data), n6data[(nrow(n6data)-1):(nrow(n6data)),])
+    #####################################################
+    # Create summary_table from the last data in n6data
     
-    # collect initial Cycle20 values
-    #debugging
-    #cycle_index <- 20
+    # Initialize the summary_table
+    summary_table <- data.frame(Well = character(96), Endpoint.fluo = integer(96), stop.cycle = integer(96), stringsAsFactors = FALSE)
+    
+    # Loop through each of the 96 columns
+    for (i in 2:ncol(fluo_table)) {
+      # Get the column name
+      well_name <- colnames(fluo_table)[i]
+      
+      # Find the last non-NA value in the column
+      last_non_na_index <- max(which(!is.na(fluo_table[[i]])))
+      
+      # Record the well name
+      summary_table$Well[i - 1] <- well_name
+      
+      # Record the found value in the Endpoint.fluo column
+      summary_table$Endpoint.fluo[i - 1] <- fluo_table[last_non_na_index, i]
+      
+      # Record the Cycle value in the stop.cycle column
+      summary_table$stop.cycle[i - 1] <- fluo_table$Cycle[last_non_na_index]
+    }
+    
+    ## collect initial Cycle20 values
     cycle_index <- input$cycle_number
     row_title <- paste("Cycle", cycle_index, sep=".")
     
-    # Match cycle number with fluo table and extract corresponding row values
+    ## Match cycle number with fluo table and extract corresponding row values
     matched_row <- as.data.frame(fluo_table[fluo_table$Cycle == cycle_index, -1])  # Exclude 'Cycle' column
     rownames(matched_row) <- row_title
     
-    # Transpose summary_table and convert it back to a data frame
-    summary_table <- as.data.frame(rbind(summary_table[,-1], matched_row))
-    rownames(summary_table) <- c("Well","Endpoint.fluo","stop.cycle", row_title) # Rename columns
-    summary_table <- as.data.frame(t(summary_table))
+    # Apply the function to the matched_row
+    matched_row <- replace_na_with_last_non_na(matched_row, fluo_table[,-1])
     
-    # convert to integers
-    summary_table[, 2:4] <- lapply(summary_table[, 2:4], as.integer)
-    
+    # add as new column
+    summary_table <- cbind(summary_table, t(matched_row))
+
     # add Labels
     summary_table <- merge(summary_table, sample_info[, c("Well", "Label")], by = "Well", all.x = TRUE)
     
@@ -266,17 +305,20 @@ server <- function(input, output, session) {
     paste("Selected Rows:", length(input$sampleInfo_rows_selected))
   })
   
+  # deselect all selected rows
   observeEvent(input$deselectAllBtn, {
     proxy <<- dataTableProxy('sampleInfo') 
     selectRows(proxy, NULL) # Deselect all rows visually
   })
   
+  # select all table rows
   observeEvent(input$selectAllBtn, {
     proxy <<- dataTableProxy('sampleInfo') 
     all_rows_indices <- seq_len(nrow(sample_info())) # Get indices of all rows in sample table
     selectRows(proxy, all_rows_indices) # Select all rows visually without coercion issues
   })
   
+  # select all currently visible rows
   observeEvent(input$selectDisplayedBtn, {
     proxy <- dataTableProxy('sampleInfo')
     
@@ -287,6 +329,7 @@ server <- function(input, output, session) {
     selectRows(proxy, displayed_rows)
   })
   
+  # draw overlay plot for all seldected rows
   observeEvent(input$filterPlotBtn, {
     req(data()$fluo_long, input$sampleInfo_rows_selected)
     selected_rows_indices <- input$sampleInfo_rows_selected
@@ -356,10 +399,11 @@ server <- function(input, output, session) {
   # render plot for userCycleHistogram
   output$userCycleHistogram <- renderPlot({
     req(data()$summary_table)
+
     cycle_index <- input$cycle_number
     column_name <- paste("Cycle", cycle_index, sep=".")
     binsize <- input$binsize
-    
+
     # Check if the column exists in the summary_table
     if (!(column_name %in% names(data()$summary_table))) {
       return(NULL)  # Return NULL if the column doesn't exist
@@ -367,9 +411,10 @@ server <- function(input, output, session) {
     
     #  # Extract cycle data from the full fluo_table
     fluo_data_for_cycle <- data()$fluo_table[data()$fluo_table$Cycle == cycle_index, -1]
-      
-    # Replace NA values with endpoint fluorescence
+    
+    # Replace NA values with endpoint fluorescence in a former cycle
     endpoint_fluo <- setNames(data()$summary_table$Endpoint.fluo, data()$summary_table$Well)
+    
     fluo_data_for_cycle <- sapply(names(fluo_data_for_cycle), function(well) {
         value <- fluo_data_for_cycle[[well]]
         if (is.na(value)) endpoint_fluo[well] else value
@@ -391,6 +436,7 @@ server <- function(input, output, session) {
   # write the value of statistic_value in the heatmap tab
   output$statisticInfo <- renderText({
     req(data()$fluo_table)
+    
     cycle_index <- input$cycle_number
     fluo_data_for_cycle <- data()$fluo_table[data()$fluo_table$Cycle == cycle_index, -1]
     
