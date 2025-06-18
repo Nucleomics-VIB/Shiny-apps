@@ -6,7 +6,7 @@ library(DT)
 options(shiny.maxRequestSize = 100 * 1024^2)
 
 ui <- fluidPage(
-  titlePanel("Overlayed RGB Histogram and Summary for PNG Images"),
+  titlePanel("Overlayed RGB Histogram and Summary from Aviti loading PNG Images"),
   sidebarLayout(
     sidebarPanel(
       fileInput("pngs", "Upload PNG files", multiple = TRUE, accept = ".png"),
